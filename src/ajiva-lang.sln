@@ -3,6 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{8B9512EA-9BE6-47A7-983C-D955224D38D8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ajiva-Utils", "Ajiva-Utils", "{4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Extensions", "..\libs\ajiva-utils\src\Ajiva.Extensions\Ajiva.Extensions.csproj", "{021B98B0-7E1E-4854-85C2-9391FE7B3D84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Include", "..\libs\ajiva-utils\src\Ajiva.Include\Ajiva.Include.csproj", "{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Net", "..\libs\ajiva-utils\src\Ajiva.Net\Ajiva.Net.csproj", "{31D30D7E-A338-40D3-8080-9CB17D109891}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Net.Tests", "..\libs\ajiva-utils\src\Ajiva.Net.Tests\Ajiva.Net.Tests.csproj", "{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Wrapper", "..\libs\ajiva-utils\src\Ajiva.Wrapper\Ajiva.Wrapper.csproj", "{262798F4-46C4-41A0-83BB-21F049B71294}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +24,35 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{021B98B0-7E1E-4854-85C2-9391FE7B3D84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{021B98B0-7E1E-4854-85C2-9391FE7B3D84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{021B98B0-7E1E-4854-85C2-9391FE7B3D84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{021B98B0-7E1E-4854-85C2-9391FE7B3D84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31D30D7E-A338-40D3-8080-9CB17D109891}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31D30D7E-A338-40D3-8080-9CB17D109891}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31D30D7E-A338-40D3-8080-9CB17D109891}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31D30D7E-A338-40D3-8080-9CB17D109891}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{262798F4-46C4-41A0-83BB-21F049B71294}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{262798F4-46C4-41A0-83BB-21F049B71294}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{262798F4-46C4-41A0-83BB-21F049B71294}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{262798F4-46C4-41A0-83BB-21F049B71294}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9} = {8B9512EA-9BE6-47A7-983C-D955224D38D8}
+		{021B98B0-7E1E-4854-85C2-9391FE7B3D84} = {4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}
+		{3AC7E4F6-5EAF-478C-B67A-6AA978CC4FED} = {4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}
+		{31D30D7E-A338-40D3-8080-9CB17D109891} = {4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}
+		{72DAF83B-DA34-45CC-8451-EC4A18D1CD5A} = {4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}
+		{262798F4-46C4-41A0-83BB-21F049B71294} = {4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9}
 	EndGlobalSection
 EndGlobal
