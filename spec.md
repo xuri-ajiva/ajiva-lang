@@ -1,87 +1,133 @@
-## The Ajiva-Lang Specification
+# The Ajiva-Lang Specification
 
-basic desctrption
+basic description
 
-### File formats
+## File formats
 
-Ajiva Sorce Code are [UTF-8](https://en.wikipedia.org/wiki/UTF-8) files with the `.ajc` file extension.
-The Sorce Files are compiled with the `ajivac` compiler into `.alib`.
+Ajiva Source Code are [UTF-8](https:\- en.wikipedia.org/wiki/UTF-8) files with the `.aj` file extension.
+The Source Files are compiled with the `ajivac` compiler into `.alib`.
 
-### Basic concept
+# Basic concept
 
-The Ajiva use the concept context diffrent meaning for characters.
+The Ajiva use the concept context different meaning for characters.
 e.g.
-```c
-a < 10 // assing a to 10
-if a < 20 // comparison
-//[......] is named an expression
-    a < 10 < 2 // assing a to be 10 < 2 witch is 20
-// [..........]  <-- is considert a section
+
+```aj
+a < 10 \- assign a to 10
+if a < 20 \- comparison
+\- [......] is named an expression
+    a < 10 < 2 \- assign a to be 10 < 2 witch is 20
+\- [..........]  <-- is considers a section
 ```
 
-### Comments
+## Naming
 
-Comments are `c` style.
-Line Comments begin with `//` and block comments start with `/*` and must end in `*/`
+A name is only allowed if a name is expected, allowed characters are `[a-z,A-Z,_,-,]`.
+e.g.
 
-```c
-// This is a line Comment
+```aj
+hallo < "hello"
+```
 
-/*
+## Sections
+
+- Ajiva uses section as the term for a region inside the source.
+- A section can be the file it self, a folder containing the file beginning at the folder of the compilation process.
+- A section can also be the block after an if statement.
+- Therefore a section can allow many different declarations.
+- Section Names must follow the [Naming](#naming) Specification
+  - All non allowed characters are removed
+  - All spaces are converted to hyphens (`-`)
+  - Two or more hyphens in a row are converted to one.
+- Sections are defined by Markers.
+  - Section begin / end is to characters one of them must be a specific marker for the region, the other decides the section type / length
+  - Begin / end of Section can have a different maker character
+  - A single line section begins with the makers followed by a hyphens
+  - Multi line sections start with the makers followed by a star (`*`) and end with a star followed by the maker or an `EOF`.
+
+| section name                              | allowed statements / definitions | Begin Marker | End Marker |
+| ----------------------------------------- | -------------------------------- | ------------ | ---------- |
+| File                                      | functions, UDF                   | EOF          | EOF        |
+| Folder                                    | files, no other posable          | EOF          | EOF        |
+| Function                                  | functions, variables, UDF        | {            | }          |
+| Control flow statements <br> with section | sane as function                 | {            | }          |
+| Comment                                   | no Subsections Parsed            | /            | \          |
+
+## Comments
+
+Comments are sections which are not interpreted as code.
+Comments Use the `\` character as the section markers meaning
+line Comments begin with `\-` and block comments start with `\*` and must end in `*/` or `EOF`
+
+```aj
+\- This is a line Comment
+
+\*
 And this is a Block comment
-You can write multiple lines in thair
+You can write multiple lines in their
 */
 ```
 
-### Naming
-A name is only allowed if every part canot be interpreted as any other statment.
+## Namespace
+
+A namespace is considered the absolute path to a function / variable / user defined structure.
+The namespace is automatic based on the context.
+The namespace is the name of every section separated with a dot from top to bottom
+
 e.g.
-```c
-1 // interpeded as number 1
-1d // interpreted as number 1 but as double presition
-1a // valid name
-a j i v a // valid name 'a j i v a'
+root/file.aj
 
-a if a // not valid because if is a control flow statment
-1 < 2 // assings 2 to the valiable 1 but not usefull beacause you cant use variable 1 anywhere because its interpeted as 1
-a < 1 // will set a to 1 not to 2 bacause 1 cal be inerpreted as the number 1
+```aj
+\- current namespace: root.file
 
+#pure  \- wrap next block in a pure function named after the file, one allowed per file
+{* \- block until EOF
+\- current namespace: root.file.file
 ```
 
-### Variables
+## Variables
 
-Variables are staticly typed but not annotated meaning the copiler desides whitch type the vairable has.
-Uses the Standart Naming spesification
+Variables are staticky typed but not annotated meaning the compiler deseeds which type the variable has.
+Uses the Standard [Naming](#naming) Specification
+e.g.
 
-
-#### Assingment
-
-Ajiva uses the `<` left side assing or `>` right side assing charater to assing value
-
-```c
-a < 10 // set a to 10
-"hello" > b // set b to "hello"
+```aj
+TODO
 ```
 
-### Control flow
+## Operators
 
-Control flow can be done by many diffrent statments
+### Assignment
 
-| statment | expects                | meaning                                                     |
-| -------- | ---------------------- | ----------------------------------------------------------- |
-| if       | expression --> section | checks the expression and branches into the section if true |
-| while    | expression --> section | loops the given block as long as the expression is true     |
+Ajiva uses the `<` left side assign or `>` right side assign character to assign value
 
-### Functions
+```aj
+a < 10 \- set a to 10
+"hello" > b \- set b to "hello"
+```
 
-### User Defined Structures
+## Control flow
 
-### Attributes
+Control flow can be done by many different statements
+
+| statement | expects                | meaning                                                     |
+| --------- | ---------------------- | ----------------------------------------------------------- |
+| if        | expression --> section | checks the expression and branches into the section if true |
+| while     | expression --> section | loops the given block as long as the expression is true     |
+
+## Functions
+
+Functions are allowed to be defined in every section and must contain a function body as section.
+
+## User Defined Structures
+
+## Attributes
 
 Attributes start with `@` or `#` or `^`
 
 e.g
-```cs
-@entry // defines entry point
-#pure  // wrap next block in a pure function named after the file, one allowed per file
+
+```aj
+@entry \- defines entry point
+#pure  \- wrap next block in a pure function named after the file, one allowed per file
 ```
