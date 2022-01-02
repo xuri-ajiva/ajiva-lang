@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Net.Tests", "..\libs\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ajiva.Wrapper", "..\libs\ajiva-utils\src\Ajiva.Wrapper\Ajiva.Wrapper.csproj", "{262798F4-46C4-41A0-83BB-21F049B71294}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ajivac", "ajivac\ajivac.csproj", "{91DCCAB4-53D8-41DC-9179-D402D67DFC20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestExampels", "TestExampels\TestExampels.csproj", "{29A2D448-EE15-405C-8D1C-B9D1D8B19BAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +50,14 @@ Global
 		{262798F4-46C4-41A0-83BB-21F049B71294}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{262798F4-46C4-41A0-83BB-21F049B71294}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{262798F4-46C4-41A0-83BB-21F049B71294}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91DCCAB4-53D8-41DC-9179-D402D67DFC20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91DCCAB4-53D8-41DC-9179-D402D67DFC20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91DCCAB4-53D8-41DC-9179-D402D67DFC20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91DCCAB4-53D8-41DC-9179-D402D67DFC20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29A2D448-EE15-405C-8D1C-B9D1D8B19BAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29A2D448-EE15-405C-8D1C-B9D1D8B19BAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29A2D448-EE15-405C-8D1C-B9D1D8B19BAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29A2D448-EE15-405C-8D1C-B9D1D8B19BAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4DB3B9DA-B3B5-4B96-A64D-8E944B06ECA9} = {8B9512EA-9BE6-47A7-983C-D955224D38D8}
