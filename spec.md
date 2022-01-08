@@ -4,7 +4,7 @@ basic description
 
 ## File formats
 
-Ajiva Source Code are [UTF-8](https:\- en.wikipedia.org/wiki/UTF-8) files with the `.aj` file extension.
+Ajiva Source Code are [UTF-8](https:// en.wikipedia.org/wiki/UTF-8) files with the `.aj` file extension.
 The Source Files are compiled with the `ajivac` compiler into `.alib`.
 
 # Basic concept
@@ -13,11 +13,11 @@ The Ajiva use the concept context different meaning for characters.
 e.g.
 
 ```aj
-a < 10 \- assign a to 10
-if a < 20 \- comparison
-\- [......] is named an expression
-    a < 10 < 2 \- assign a to be 10 < 2 witch is 20
-\- [..........]  <-- is considers a section
+a < 10 // assign a to 10
+if a < 20 // comparison
+// [......] is named an expression
+    a < 10 < 2 // assign a to be 10 < 2 witch is 20
+// [..........]  <-- is considers a section
 ```
 
 ## Naming
@@ -40,10 +40,8 @@ hallo < "hello"
   - All spaces are converted to hyphens (`-`)
   - Two or more hyphens in a row are converted to one.
 - Sections are defined by Markers.
-  - Section begin / end is to characters one of them must be a specific marker for the region, the other decides the section type / length
-  - Begin / end of Section can have a different maker character
-  - A single line section begins with the makers followed by a hyphens
-  - Multi line sections start with the makers followed by a star (`*`) and end with a star followed by the maker or an `EOF`.
+  - Begin / end of Section can have a different maker
+  - Multi line sections starting with the begin maker followed by a star (`*`) continue until star end maker or an `EOF` token.
 
 | section name                              | allowed statements / definitions | Begin Marker | End Marker |
 | ----------------------------------------- | -------------------------------- | ------------ | ---------- |
@@ -51,18 +49,19 @@ hallo < "hello"
 | Folder                                    | files, no other posable          | EOF          | EOF        |
 | Function                                  | functions, variables, UDF        | {            | }          |
 | Control flow statements <br> with section | sane as function                 | {            | }          |
-| Comment                                   | no Subsections Parsed            | /            | \          |
+| Comment Multi Line                        | no Subsections Parsed            | //*          | /*/        |
+| Comment single line                       | no Subsections Parsed            | //           | \n OR \r   |
 
 ## Comments
 
 Comments are sections which are not interpreted as code.
 Comments Use the `\` character as the section markers meaning
-line Comments begin with `\-` and block comments start with `\*` and must end in `*/` or `EOF`
+line Comments begin with `//` and block comments start with `/*` and must end in `*/` or `EOF`
 
 ```aj
-\- This is a line Comment
+// This is a line Comment
 
-\*
+/*
 And this is a Block comment
 You can write multiple lines in their
 */
@@ -78,11 +77,11 @@ e.g.
 root/file.aj
 
 ```aj
-\- current namespace: root.file
+// current namespace: root.file
 
-#pure  \- wrap next block in a pure function named after the file, one allowed per file
-{* \- block until EOF
-\- current namespace: root.file.file
+#pure  // wrap next block in a pure function named after the file, one allowed per file
+{* // block until EOF
+// current namespace: root.file.file
 ```
 
 ## Variables
@@ -102,8 +101,8 @@ TODO
 Ajiva uses the `<` left side assign or `>` right side assign character to assign value
 
 ```aj
-a < 10 \- set a to 10
-"hello" > b \- set b to "hello"
+a < 10 // set a to 10
+"hello" > b // set b to "hello"
 ```
 
 ## Control flow
@@ -128,6 +127,6 @@ Attributes start with `@` or `#` or `^`
 e.g
 
 ```aj
-@entry \- defines entry point
-#pure  \- wrap next block in a pure function named after the file, one allowed per file
+@entry // defines entry point
+#pure  // wrap next block in a pure function named after the file, one allowed per file
 ```
