@@ -4,7 +4,7 @@ basic description
 
 ## File formats
 
-Ajiva Source Code are [UTF-8](https:// en.wikipedia.org/wiki/UTF-8) files with the `.aj` file extension.
+Ajiva Source Code are [UTF-8](https://en.wikipedia.org/wiki/UTF-8) files with the `.aj` file extension.
 The Source Files are compiled with the `ajivac` compiler into `.alib`.
 
 # Basic concept
@@ -13,20 +13,18 @@ The Ajiva use the concept context different meaning for characters.
 e.g.
 
 ```aj
-a < 10 // assign a to 10
-if a < 20 // comparison
-// [......] is named an expression
-    a < 10 < 2 // assign a to be 10 < 2 witch is 20
-// [..........]  <-- is considers a section
+i32 a = 10 // assign a to 10
+if a = 20 // comparison
+    a = 10 << 2 // assign a to be 10 << 2 witch is 20
 ```
 
 ## Naming
 
-A name is only allowed if a name is expected, allowed characters are `[a-z,A-Z,_,-,]`.
+A name is only allowed if a name is expected, allowed characters are `[a-z,A-Z,_]`.
 e.g.
 
 ```aj
-hallo < "hello"
+str hello = "World!"
 ```
 
 ## Sections
@@ -37,8 +35,8 @@ hallo < "hello"
 - Therefore a section can allow many different declarations.
 - Section Names must follow the [Naming](#naming) Specification
   - All non allowed characters are removed
-  - All spaces are converted to hyphens (`-`)
-  - Two or more hyphens in a row are converted to one.
+  - All spaces are converted to underscores (`_`)
+  - Two or more underscores in a row are converted to one.
 - Sections are defined by Markers.
   - Begin / end of Section can have a different maker
   - Multi line sections starting with the begin maker followed by a star (`*`) continue until star end maker or an `EOF` token.
@@ -49,7 +47,7 @@ hallo < "hello"
 | Folder                                    | files, no other posable          | EOF          | EOF        |
 | Function                                  | functions, variables, UDF        | {            | }          |
 | Control flow statements <br> with section | sane as function                 | {            | }          |
-| Comment Multi Line                        | no Subsections Parsed            | //*          | /*/        |
+| Comment Multi Line                        | no Subsections Parsed            | //\*         | /\*/       |
 | Comment single line                       | no Subsections Parsed            | //           | \n OR \r   |
 
 ## Comments
@@ -86,8 +84,19 @@ root/file.aj
 
 ## Variables
 
-Variables are staticky typed but not annotated meaning the compiler deseeds which type the variable has.
 Uses the Standard [Naming](#naming) Specification
+Variables are staticky typed and annotated meaning you must tell the compiler witch type a variable has.
+build in types are:
+|keyword|description|
+|-------|-----------|
+| `i32` | integer 32 bits |
+| `i64` | integer 64 bits |
+| `f32` | floating point 32 bits of presidios |
+| `f64` | floating point 64 bits of presidios |
+| `chr` | character encoded in UTF-8 |
+| `str` | character array |
+| `bit` | single bit representing either True of False |
+
 e.g.
 
 ```aj
@@ -98,11 +107,10 @@ TODO
 
 ### Assignment
 
-Ajiva uses the `<` left side assign or `>` right side assign character to assign value
-
+Ajiva uses the `=` to assign a value to a variable.
 ```aj
-a < 10 // set a to 10
-"hello" > b // set b to "hello"
+i32 a = 10 // set a to 10
+str b = "hello" // set b to "hello"
 ```
 
 ## Control flow
@@ -122,7 +130,7 @@ Functions are allowed to be defined in every section and must contain a function
 
 ## Attributes
 
-Attributes start with `@` or `#` or `^`
+Attributes start with `@` or `#` or `^` depending on the type of the attribute.
 
 e.g
 
