@@ -34,10 +34,6 @@ public enum TokenType
     EOF,
 
     Unknown,
-    
-    
-    BeginScope,
-    EndScope,
 
     Attribute,
     Identifier,
@@ -72,18 +68,54 @@ public enum TokenType
     False,
     Null,
     Number,
-
-
-    BracketLeft,
-    BracketRight,
-    BraceLeft,
-    BraceRight,
-    SqBracketLeft,
-    SqBracketRight,
-    AngleBracketLeft,
-    AngleBracketRight,
+    
 
     Comma,
     Dot,
     Semicolon,
+    
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Equal,
+    NotEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    And,
+    Or,
+    Xor,
+    BitAnd,
+    BitOr,
+    BitXor,
+    
+    ShiftLeft,
+    ShiftRight,
+    Question,
+    Colon,
+    
+    Not,
+    Negate,
+    Increment,
+    Decrement,
+    
+    Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    ModAssign,
+    AndAssign,
+    OrAssign,
+    XorAssign,
+
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    LBracket,
+    RBracket
 }

@@ -39,8 +39,8 @@ public class Lexer : ILexer
         if (LanguageDefinition.IsValidIdentifierBegin(_currentChar))
         {
             _buffer.Append(_currentChar);
-            while (LanguageDefinition.IsValidIdentifierContinuation(ReadNextChar()))
-                _buffer.Append(_currentChar);
+            while (LanguageDefinition.IsValidIdentifierContinuation(PeekNextChar()))
+                _buffer.Append(ReadNextChar());
 
             var identifier = _buffer.ToString();
             _buffer.Clear();
@@ -58,8 +58,8 @@ public class Lexer : ILexer
         if (LanguageDefinition.IsValidNumberBegin(_currentChar))
         {
             _buffer.Append(_currentChar);
-            while (LanguageDefinition.IsValidNumberContinuation(ReadNextChar(), _buffer))
-                _buffer.Append(_currentChar);
+            while (LanguageDefinition.IsValidNumberContinuation(PeekNextChar(), _buffer))
+                _buffer.Append(ReadNextChar());
 
             var number = _buffer.ToString();
             _buffer.Clear();
@@ -79,30 +79,41 @@ public class Lexer : ILexer
 
         if (LanguageDefinition.IsCommentBegin(_currentChar))
         {
-            if (LanguageDefinition.IsSingleLineCommentContinuation(PeekNextChar()))
+            if (LanguageDefinition.IsSingleLineCommentBegin(_currentChar, PeekNextChar()))
             {
-                do
+                while (!LanguageDefinition.IsLineBreak(_currentChar) && !EOF)
                 {
                     ReadNextChar();
-                    if (EOF) goto eof;
-                } while (!LanguageDefinition.IsSingleCommentEnd(_currentChar));
+                }
 
                 return ReadNextToken();
             }
-            if (LanguageDefinition.IsMultiLineCommentContinuation(PeekNextChar()))
+            if (LanguageDefinition.IsMultiLineCommentBegin(_currentChar, PeekNextChar()))
             {
-                while (true)
+                while (!LanguageDefinition.IsMultiLineCommentEnd(_currentChar, PeekNextChar()) && !EOF)
                 {
                     ReadNextChar();
-
-                    if (EOF) goto eof;
-                    if (LanguageDefinition.IsMultiLineCommentEnd(_currentChar) && LanguageDefinition.IsMultiLineCommentEndContinuation(PeekNextChar()))
-                    {
-                        break;
-                    }
                 }
                 return ReadNextToken();
             }
+        }
+
+        if(LanguageDefinition.IsAttributeChar(_currentChar))
+        {
+            return CurrentToken = new Token(TokenType.Attribute, _currentChar.ToString(), _currentPosition);
+        }
+        
+        if (LanguageDefinition.TryGetSpecialCharToken(_currentChar, PeekNextChar(), out var op, out var length))
+        {
+            _buffer.Append(_currentChar);
+            while (length > 1)
+            {
+                _buffer.Append(ReadNextChar());
+                length--;
+            }
+            var operatorString = _buffer.ToString();
+            _buffer.Clear();
+            return CurrentToken = new Token(op, operatorString, _currentPosition);
         }
 
         eof:
@@ -124,13 +135,13 @@ public class Lexer : ILexer
     {
         var read = _reader.Read();
         _currentPosition.Column++;
-        
+
         if (read == -1)
         {
             EOF = true;
             return default;
         }
-        if(read is '\n' or '\r')
+        if (read is '\n' or '\r')
         {
             _currentPosition.Line++;
             _currentPosition.Column = 0;
@@ -152,7 +163,7 @@ public class LanguageDefinition
 {
     public static bool IsValidIdentifierBegin(char c)
     {
-        return IsValidIdentifierContinuation(c);
+        return char.IsLetter(c) || c == '_';
     }
 
     public static bool IsValidIdentifierContinuation(char c)
@@ -162,7 +173,7 @@ public class LanguageDefinition
 
     public static bool IsWhiteSpace(char c)
     {
-        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+        return c is ' ' or '\t' or '\n' or '\r';
     }
 
     public static IDictionary<TokenType, string> KeyWordMap = new ReadOnlyDictionary<TokenType, string>(
@@ -198,7 +209,7 @@ public class LanguageDefinition
 
     public static bool IsValidNumberBegin(char c)
     {
-        return char.IsDigit(c) || c is '.' or '-' or '+';
+        return char.IsDigit(c) || c is '.';
     }
 
     public static bool IsValidNumberContinuation(char c, StringBuilder builder)
@@ -212,28 +223,101 @@ public class LanguageDefinition
         return c is '/';
     }
 
-    public static bool IsSingleLineCommentContinuation(char c)
+    public static bool IsSingleLineCommentBegin(char c, char next)
     {
-        return c is '/';
+        return c == '/' && next == '/';
     }
 
-    public static bool IsSingleCommentEnd(char c)
+    public static bool IsMultiLineCommentBegin(char c, char next)
+    {
+        return c is '/' && next is '*';
+    }
+
+    public static bool IsMultiLineCommentEnd(char c, char next)
+    {
+        return c is '*' && next is '/';
+    }
+
+    public static bool IsSingleSpecialControlChar(char c)
+    {
+        return c is '+' or '+' or '+' or '-' or '-' or '-' or '*' or '*' or '/' or '/' or '%' or '%' or '^' or '^' or '^' or '&' or '&' or '&' or '|' or '|' or '|' or '!' or '!' or '=' or '=' or '<' or '<' or '<' or '>' or '>' or '>' or '?' or ':' or '~' or '.' or ',' or ';' or '(' or ')' or '{' or '}' or '[' or ']';
+    }
+
+    public static bool TryGetSpecialCharToken(char c, char next, out TokenType type, out int length)
+    {
+        if (IsSingleSpecialControlChar(c))
+        {
+            if (IsSingleSpecialControlChar(next))
+            {
+                type = c switch {
+                    '+' when next is '+' => TokenType.Increment,
+                    '+' when next is '=' => TokenType.AddAssign,
+                    '-' when next is '-' => TokenType.Decrement,
+                    '-' when next is '=' => TokenType.SubAssign,
+                    '*' when next is '=' => TokenType.MulAssign,
+                    '/' when next is '=' => TokenType.DivAssign,
+                    '%' when next is '=' => TokenType.ModAssign,
+                    '^' when next is '=' => TokenType.XorAssign,
+                    '^' when next is '^' => TokenType.Xor,
+                    '&' when next is '=' => TokenType.AndAssign,
+                    '&' when next is '&' => TokenType.And,
+                    '|' when next is '=' => TokenType.OrAssign,
+                    '|' when next is '|' => TokenType.Or,
+                    '!' when next is '=' => TokenType.NotEqual,
+                    '=' when next is '=' => TokenType.Equal,
+                    '<' when next is '=' => TokenType.LessEqual,
+                    '<' when next is '<' => TokenType.ShiftLeft,
+                    '>' when next is '=' => TokenType.GreaterEqual,
+                    '>' when next is '>' => TokenType.ShiftRight,
+                    _ => TokenType.Unknown
+                };
+                length = 2;
+                if (type != TokenType.Unknown)
+                    return true;
+            }
+
+            length = 1;
+            type = c switch {
+                '+' => TokenType.Add,
+                '-' => TokenType.Sub,
+                '*' => TokenType.Mul,
+                '/' => TokenType.Div,
+                '%' => TokenType.Mod,
+                '^' => TokenType.BitXor,
+                '&' => TokenType.BitAnd,
+                '|' => TokenType.BitOr,
+                '!' => TokenType.Not,
+                '=' => TokenType.Assign,
+                '<' => TokenType.Less,
+                '>' => TokenType.Greater,
+                '?' => TokenType.Question,
+                ':' => TokenType.Colon,
+                '~' => TokenType.Negate,
+                '.' => TokenType.Dot,
+                ',' => TokenType.Comma,
+                ';' => TokenType.Semicolon,
+                '(' => TokenType.LParen,
+                ')' => TokenType.RParen,
+                '{' => TokenType.LBrace,
+                '}' => TokenType.RBrace,
+                '[' => TokenType.LBracket,
+                ']' => TokenType.RBracket,
+                _ => TokenType.Unknown
+            };
+            return type != TokenType.Unknown;
+        }
+        type = TokenType.Unknown;
+        length = 0;
+        return false;
+    }
+
+    public static bool IsLineBreak(char c)
     {
         return c is '\n' or '\r';
     }
 
-    public static bool IsMultiLineCommentContinuation(char c)
+    public static bool IsAttributeChar(char c)
     {
-        return c is '*';
-    }
-
-    public static bool IsMultiLineCommentEnd(char c)
-    {
-        return c is '*';
-    }
-
-    public static bool IsMultiLineCommentEndContinuation(char c)
-    {
-        return c is '/';
+        return c is '#' or '@';
     }
 }
