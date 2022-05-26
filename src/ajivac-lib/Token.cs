@@ -1,32 +1,21 @@
-﻿namespace ajivac_lib;
+﻿using ajivac_lib.AST;
+
+namespace ajivac_lib;
 
 public class Token
 {
     public TokenType Type { get; }
-    public string Value { get; }
-    public TokenLocation Location { get; set; }
-
-    public Token(TokenType type, string value, TokenLocation location)
+    public TokenSource Source { get; set; }
+    public ReadOnlySpan<char> GetValue()
     {
-        Location = location;
+        return Source.GetValue();
+    }
+
+    public Token(TokenType type, TokenSource source)
+    {
         Type = type;
-        Value = value;
+        Source = source;
     }
-
-}
-public struct TokenLocation
-{
-    public TokenLocation(int line, int column, string file)
-    {
-        this.Line = line;
-        this.Column = column;
-        this.File = file;
-    }
-
-    public int Line { get; set; }
-    public int Column { get; set; }
-    public string File { get; set; }
-    
 }
 public enum TokenType
 {
@@ -36,6 +25,7 @@ public enum TokenType
     Unknown,
 
     Attribute,
+    Preprocessor,
     Identifier,
 
     I32,
@@ -67,19 +57,19 @@ public enum TokenType
     True,
     False,
     Null,
-    Number,
+    Value,
     
 
     Comma,
     Dot,
     Semicolon,
     
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Equal,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
+    DoubleEquals,
     NotEqual,
     Greater,
     GreaterEqual,
