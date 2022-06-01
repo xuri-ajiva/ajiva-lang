@@ -1,6 +1,6 @@
 ﻿namespace ajivac_lib;
 
-public struct TokenSource
+public struct SourceSpan
 {
     public uint Position;
     public uint Length;
@@ -32,7 +32,7 @@ public struct TokenSource
         return new string(tmp[..i]);
     }
 
-    public TokenSource Append(TokenSource other)
+    public SourceSpan Append(SourceSpan other)
     {
         return this with {
             Length = other.Position + other.Length - Position

@@ -65,11 +65,11 @@ if ( !(a == 20) ) {
     });
 
 IParser parser = new Parser(lexer);
-lexer.ReadNextToken(); // lead first token  
+lexer.ReadNextToken(); // lead first token
 while (lexer.CurrentToken.Type != TokenType.EOF)
 {
-    var expressionAst = parser.ParsPrimary();
-    Console.WriteLine(expressionAst?.GetType() + ": " + expressionAst?.Source);
+    var expressionAst = parser.ParsePrimary();
+    Console.WriteLine(expressionAst?.GetType() + ": " + expressionAst?.Span);
     Console.WriteLine(MakeIndentation(expressionAst));
 }
 
@@ -100,7 +100,7 @@ string MakeIndentation(object? value)
         {
             case '{' or '[' or '(' when !openStrings:
                 indentation++;
-                buffer.Append('{');
+                buffer.Append(t);
                 buffer.AppendLine();
                 Indent();
                 break;
@@ -108,7 +108,7 @@ string MakeIndentation(object? value)
                 indentation--;
                 buffer.AppendLine();
                 Indent();
-                buffer.Append('}');
+                buffer.Append(t);
                 break;
             case '\'' or '"':
                 buffer.Append(t);

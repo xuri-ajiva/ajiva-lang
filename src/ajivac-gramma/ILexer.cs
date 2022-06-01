@@ -159,7 +159,7 @@ public class Lexer : ILexer
 
     private Token NextTokenFromLast(TokenType type)
     {
-        CurrentToken = new Token(type, new TokenSource {
+        CurrentToken = new Token(type, new SourceSpan {
             Position = _lastTokenPosition,
             Length = _currentPosition - _lastTokenPosition,
             Source = _text

@@ -7,13 +7,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
-      <PackageReference Include="LLVMSharp" Version="5.0.0" />
+      <ProjectReference Include="..\ajivac-gramma\ajivac-gramma.csproj" />
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\ajivac-lib\ajivac-lib.csproj" />
+      <PackageReference Include="Llvm.NET" Version="8.0.1" />
     </ItemGroup>
-
+    
+    <ItemGroup>
+      <Folder Include="LLVMCodeGen" />
+    </ItemGroup>
 </Project>

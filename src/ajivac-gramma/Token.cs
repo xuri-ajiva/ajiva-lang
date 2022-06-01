@@ -5,16 +5,16 @@ namespace ajivac_lib;
 public class Token
 {
     public TokenType Type { get; }
-    public TokenSource Source { get; set; }
+    public SourceSpan Span { get; set; }
     public ReadOnlySpan<char> GetValue()
     {
-        return Source.GetValue();
+        return Span.GetValue();
     }
 
-    public Token(TokenType type, TokenSource source)
+    public Token(TokenType type, SourceSpan sourceSpan)
     {
         Type = type;
-        Source = source;
+        Span = sourceSpan;
     }
 }
 public enum TokenType
