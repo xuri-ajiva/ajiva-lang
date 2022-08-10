@@ -93,6 +93,19 @@ public record ParameterDeclaration(SourceSpan Span, int Index, string Name, Type
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
+public record AssignmentExpression(SourceSpan Span, string Name, IExpression? AssignmentValue) : BaseNode(Span), IExpression
+{
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+
+    /// <inheritdoc />
+    public override IEnumerable<IAstNode> Children
+    {
+        get
+        {
+            if (AssignmentValue != null) yield return AssignmentValue;
+        }
+    }
+}
 public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyList<ParameterDeclaration> Parameters, TypeReference ReturnType, bool IsCompilerGenerated = false) : BaseNode(Span)
 {
     public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
