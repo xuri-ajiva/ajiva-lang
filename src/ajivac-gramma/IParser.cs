@@ -136,17 +136,17 @@ public class Parser : IParser
         var attrib = GuardAndEat(TokenType.Attribute);
         var identifier = ParseIdentifier();
 
-        if (_lexer.CurrentToken.Type != TokenType.LParen)
-            return new AttributeEaSt(
-                attrib.Span.Append(identifier.Span),
-                identifier.Identifier,
-                new List<IExpression>()
-            );
-
-        var open = GuardAndEat(TokenType.LParen);
-        var arguments = ParseCommaSeparatedList(ParseExpression);
-        var close = GuardAndEat(TokenType.RParen);
-        return new AttributeEaSt(identifier.Span.Append(close.Span), identifier.Identifier, arguments);
+        List<IExpression>? arguments = null;
+        var span = attrib.Span.Append(identifier.Span);
+        if (_lexer.CurrentToken.Type == TokenType.LParen)
+        {
+            var open = GuardAndEat(TokenType.LParen);
+            arguments = ParseCommaSeparatedList(ParseExpression);
+            var close = GuardAndEat(TokenType.RParen);
+            span = identifier.Span.Append(close.Span);
+        }
+        var operand = ParsePrimary();
+        return new AttributeEaSt(span, identifier.Identifier, operand, arguments);
     }
 
     private void GuardCurrentToken(TokenType expect)
