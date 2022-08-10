@@ -41,6 +41,9 @@ public class Parser : IParser
     public BaseNode ParseValue()
     {
         var v = _lexer.LastValue;
+        if (string.IsNullOrEmpty(v))
+            return ParseLocalVariableDeclaration();
+
         if (bool.TryParse(v, out _))
             return ParseValue(BuildInType.Bit);
         if (uint.TryParse(v, out _))
