@@ -129,13 +129,27 @@ public record FunctionDefinition(SourceSpan Span, Prototype Signature, IAstNode 
 
     public IReadOnlyList<LocalVariableDeclaration> LocalVariables { get; }
 }
-public record AttributeEaSt(SourceSpan Span, string Name, IReadOnlyList<IExpression> Arguments) : BaseNode(Span)
+public record AttributeEaSt(SourceSpan Span, string Name, IAstNode? Operand, IReadOnlyList<IExpression>? Arguments) : BaseNode(Span)
 {
     /// <inheritdoc />
     public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
 
     /// <inheritdoc />
-    public override IEnumerable<IAstNode> Children => Arguments;
+    public override IEnumerable<IAstNode> Children
+    {
+        get
+        {
+            if (Operand is not null)
+                yield return Operand;
+            if (Arguments is not null)
+            {
+                foreach (var argument in Arguments)
+                {
+                    yield return argument;
+                }
+            }
+        }
+    }
 }
 public record IfExpression(
     SourceSpan Span, IExpression Condition, IAstNode ThenExpression, IAstNode? ElseExpression,
