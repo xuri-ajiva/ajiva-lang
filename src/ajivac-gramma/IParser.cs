@@ -103,6 +103,7 @@ public class Parser : IParser
         IExpression? expression = null;
         if (_lexer.CurrentToken.Type == TokenType.Assign)
         {
+            GuardAndEat(TokenType.Assign);
             expression = ParseExpression();
         }
         return new LocalVariableDeclaration(
