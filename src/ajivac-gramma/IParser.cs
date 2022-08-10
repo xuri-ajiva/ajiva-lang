@@ -240,15 +240,23 @@ public class Parser : IParser
     public BaseNode ParseComplexIdentifier()
     {
         var identifier = ParseIdentifier();
-        if (_lexer.CurrentToken.Type != TokenType.LParen)
-            return identifier;
-        var open = GuardAndEat(TokenType.LParen);
-        var arguments = ParseCommaSeparatedList(ParseExpression);
-        var closing = GuardAndEat(TokenType.RParen);
-        return new FunctionCallExpression(
-            identifier.Span.Append(closing.Span),
-            FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
-            arguments);
+        if (_lexer.CurrentToken.Type == TokenType.LParen)
+        {
+            var open = GuardAndEat(TokenType.LParen);
+            var arguments = ParseCommaSeparatedList(ParseExpression);
+            var closing = GuardAndEat(TokenType.RParen);
+            return new FunctionCallExpression(
+                identifier.Span.Append(closing.Span),
+                FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
+                arguments);
+        }
+        if (_lexer.CurrentToken.Type == TokenType.Assign)
+        {
+            var assign = GuardAndEat(TokenType.Assign);
+            var expression = ParseExpression();
+            return new AssignmentExpression(identifier.Span.Append(assign.Span), identifier.Identifier, expression);
+        }
+        return identifier;
     }
 
     public BaseNode ParseIf()
