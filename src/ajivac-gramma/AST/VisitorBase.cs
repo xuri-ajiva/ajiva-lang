@@ -68,4 +68,7 @@ public class AstVisitorBase<TResult>
 
     /// <inheritdoc />
     public TResult Visit(IfExpression node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(AssignmentExpression node) => VisitChildren(node);
 }

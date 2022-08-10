@@ -15,4 +15,5 @@ public interface IAstVisitor<out TResult>
     TResult Visit(ParameterDeclaration node);
     TResult Visit(AttributeEaSt node);
     TResult Visit(IfExpression node);
+    TResult Visit(AssignmentExpression node);
 }
