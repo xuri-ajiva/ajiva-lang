@@ -6,7 +6,22 @@ public abstract record BaseNode(SourceSpan Span) : IAstNode
 {
     public void Print(StringBuilder stringBuilder) => PrintMembers(stringBuilder);
 
-    /// <inheritdoc />
+    protected bool PrintList(StringBuilder builder, string name, IEnumerable<IAstNode> astNodes)
+    {
+        builder.Append("Children = [");
+        bool first = true;
+        foreach (var astNode in Children)
+        {
+            if (first)
+                first = false;
+            else
+                builder.Append(", ");
+            builder.Append(astNode);
+        }
+        builder.Append(']');
+        return true;
+    }
+
     protected virtual bool PrintMembers(StringBuilder builder)
     {
         return false;
@@ -24,6 +39,11 @@ public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Childs;
+
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        return PrintList(builder, nameof(Children), Children);
+    }
 }
 public record ValueExpression<T>(SourceSpan Span, T Value) : BaseNode(Span), IExpression
 {
@@ -32,6 +52,19 @@ public record ValueExpression<T>(SourceSpan Span, T Value) : BaseNode(Span), IEx
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+
+    /// <inheritdoc />
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append(nameof(Value));
+        builder.Append(" = ");
+        builder.Append(Value);
+        builder.Append(", ");
+        builder.Append(nameof(Type));
+        builder.Append(" = ");
+        builder.Append(typeof(T));
+        return true;
+    }
 }
 public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNode(Span), IExpression
 {
