@@ -25,7 +25,9 @@ public class Interpreter
 
     public void Run(IAstNode root)
     {
+        var s = BeginTime();
         Evaluate(root);
+        EndTime(nameof(Run),s);
     }
 
     private void Evaluate(IAstNode node)
@@ -262,6 +264,7 @@ public class Interpreter
 
     public void Load(RuntimeStateHolder parserRuntimeState)
     {
+        var s = BeginTime();
         foreach (var (key, proto) in parserRuntimeState.NativeFunctionDeclarations)
         {
             var parameterTypes = new Type[proto.Parameters.Count];
@@ -306,6 +309,7 @@ public class Interpreter
         {
             logger($"{key} -> {value}");
         }
+        EndTime(nameof(Load),s);
     }
 
     private static Type ResolveType(TypeReference typeReference)
@@ -328,6 +332,14 @@ public class Interpreter
             };
         }
         return typeof(object);
+    }
+
+    long BeginTime() => DateTime.Now.Ticks;
+
+    void EndTime(string name, long start)
+    {
+        var end = DateTime.Now.Ticks;
+        Console.WriteLine($"{name} took {(end - start) / 10000}ms");
     }
 
     public static void Log(int message) => LogCore(message.ToString());
