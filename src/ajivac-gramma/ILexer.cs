@@ -177,7 +177,7 @@ public class LanguageDefinition
 
     public static bool IsValidIdentifierContinuation(char c)
     {
-        return char.IsLetterOrDigit(c) || c == '_';
+        return char.IsLetterOrDigit(c) || c is '_' or '.' or ':';
     }
 
     public static bool IsWhiteSpace(char c)
