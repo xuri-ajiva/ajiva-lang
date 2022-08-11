@@ -61,6 +61,24 @@ public class Interpreter
             case ReturnStatement returnStatement:
                 stack.Peek().Ret = EvaluateExpression(returnStatement.Expression);
                 break;
+            case ForStatement forStatement:
+                var initializer = forStatement.Initializer;
+                if (initializer is LocalVariableDeclaration lv)
+                {
+                    SetVariable(lv.Name, EvaluateExpression(lv.Initializer));
+                }
+                else
+                {
+                    Evaluate(initializer);
+                }
+                var cond = EvaluateExpression(forStatement.Condition);
+                while (cond is true)
+                {
+                    Evaluate(forStatement.Body);
+                    Evaluate(forStatement.Increment);
+                    cond = EvaluateExpression(forStatement.Condition);
+                }
+                break;
             case Prototype:
             case FunctionDefinition:
                 break;
