@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection.Emit;
 using ajivac_lib.AST;
@@ -107,7 +108,7 @@ public class Parser : IParser
         IExpression? expression = null;
         if (_lexer.CurrentToken.Type == TokenType.Assign)
         {
-            GuardAndEat(TokenType.Assign);
+            _lexer.ReadNextToken(); //eat =
             expression = ParseExpression();
         }
         return new LocalVariableDeclaration(
@@ -217,10 +218,11 @@ public class Parser : IParser
             case TokenType.Identifier:
                 return ParseComplexIdentifier();
             case TokenType.Native:
-                return LoadNativeDefinition();    
+                return LoadNativeDefinition();
             case TokenType.Return:
                 return ParseReturn();
             default:
+                throw new ($"Unexpected token {_lexer.CurrentToken.Type}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
