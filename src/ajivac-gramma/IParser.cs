@@ -28,6 +28,7 @@ public interface IParser
     BaseNode ParseFunctionDefinition();
     BaseNode ParsArray();
     Token GuardAndEat(TokenType type);
+    IAstNode ParseAll();
 }
 public class Parser : IParser
 {
@@ -506,6 +507,19 @@ public class Parser : IParser
         GuardCurrentToken(type);
         _lexer.ReadNextToken(); //eat token
         return token;
+    }
+
+    /// <inheritdoc />
+    public IAstNode ParseAll()
+    {
+        _lexer.ReadNextToken(); // lead first token
+        var children = new List<IAstNode?>();
+        while (_lexer.CurrentToken.Type != TokenType.EOF)
+        {
+            children.Add(ParsePrimary());
+        }
+        return new RootNode(_lexer.CurrentToken.Span with { Length = _lexer.CurrentToken.Span.Position, Position = 0, },
+            children.Where(x => x is not null).Cast<IAstNode>().ToList());
     }
 }
 public class RuntimeStateHolder
