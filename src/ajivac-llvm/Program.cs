@@ -8,6 +8,7 @@ Console.WriteLine("Ajiva Compiler");
 
 const string src = @"
 native void System.Console.WriteLine(i32 s)
+native void Log(i32 s)
 fn i32 fac(i32 n) {
     if (n == 0) 
         return 1
@@ -17,7 +18,7 @@ fn i32 fac(i32 n) {
 }
 @entry 
 #pure {*
-System.Console.WriteLine(fac(10))
+Log(fac(10))
 i32 a = 10 
 if ( !(a != 20) ) {
     a = 10 + 2

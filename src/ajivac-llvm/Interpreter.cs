@@ -16,6 +16,7 @@ public class Interpreter
     {
         this.logger = logger;
     }
+
     public class InternStackFrame
     {
         public Dictionary<string, object> Variables { get; set; } = new();
@@ -245,6 +246,9 @@ public class Interpreter
     {
         foreach (var (key, proto) in parserRuntimeState.NativeFunctionDeclarations)
         {
+            var parameterTypes = new Type[proto.Parameters.Count];
+            for (var i = 0; i < parameterTypes.Length; i++)
+                parameterTypes[i] = ResolveType(proto.Parameters[i].TypeReference);
             var name = proto.Name;
             if (name.Contains('.'))
             {
@@ -252,19 +256,18 @@ public class Interpreter
                 var typeName = name[..name.LastIndexOf('.')];
                 if (Type.GetType(typeName + ", " + typeName) is not { } type)
                     throw new Exception($"Native type {typeName} not found");
-                var parameterTypes = new Type[proto.Parameters.Count];
-                for (var i = 0; i < parameterTypes.Length; i++)
-                    parameterTypes[i] = ResolveType(proto.Parameters[i].TypeReference);
                 if (type.GetMethod(methodName, BindingFlags.Static | BindingFlags.Default | BindingFlags.Public, parameterTypes) is not { } m)
                     throw new Exception($"Native method {methodName} not found in type {typeName}");
                 if (m.ReturnType != ResolveType(proto.ReturnType))
-                    throw new Exception($"Native method {methodName} in type {typeName} has wrong return type");
+                    throw new Exception($"Native method {methodName} in type {typeName} has wrong return type: {m.ReturnType} != {ResolveType(proto.ReturnType)}");
                 nativeMethods.Add(key, m);
             }
             else
             {
-                if (typeof(Interpreter).GetMethod(name) is not { } mi)
+                if (typeof(Interpreter).GetMethod(name, BindingFlags.Static | BindingFlags.Default | BindingFlags.Public, parameterTypes) is not { } mi)
                     throw new Exception($"Native method {name} not found");
+                if (mi.ReturnType != ResolveType(proto.ReturnType))
+                    throw new Exception($"Native Interpreter method {name} has wrong return type: {mi.ReturnType} != {ResolveType(proto.ReturnType)}");
                 nativeMethods.Add(key, mi);
             }
         }
@@ -308,4 +311,8 @@ public class Interpreter
         }
         return typeof(object);
     }
+
+    public static void Log(int message) => LogCore(message.ToString());
+    public static void Log(string message) => LogCore(message);
+    private static void LogCore(object message) => Console.WriteLine("Log: " + message);
 }
