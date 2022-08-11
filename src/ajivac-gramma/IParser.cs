@@ -45,16 +45,16 @@ public class Parser : IParser
         if (string.IsNullOrEmpty(v))
             return ParseLocalVariableDeclaration();
 
+        if (int.TryParse(v, out _))
+            return ParseValue(BuildInType.I32);
+        if (long.TryParse(v, out _))
+            return ParseValue(BuildInType.I64);
         if (bool.TryParse(v, out _))
             return ParseValue(BuildInType.Bit);
         if (uint.TryParse(v, out _))
             return ParseValue(BuildInType.U32);
         if (ulong.TryParse(v, out _))
             return ParseValue(BuildInType.U64);
-        if (int.TryParse(v, out _))
-            return ParseValue(BuildInType.I32);
-        if (long.TryParse(v, out _))
-            return ParseValue(BuildInType.I64);
         if (float.TryParse(v, out _))
             return ParseValue(BuildInType.F32);
         if (double.TryParse(v, out _))
