@@ -368,6 +368,8 @@ public class Parser : IParser
             {
                 Add();
             }
+            if (children.Count > 0)
+                pos = pos.Append(children.Last().Span);
         }
         else
         {
@@ -375,11 +377,9 @@ public class Parser : IParser
             {
                 Add();
             }
-            GuardAndEat(TokenType.RBrace);
+            var close = GuardAndEat(TokenType.RBrace);
+            pos = pos.Append(close.Span);
         }
-        if (children.Count > 0)
-            pos = pos.Append(children.Last().Span);
-
         return new RootNode(pos, children);
     }
 
