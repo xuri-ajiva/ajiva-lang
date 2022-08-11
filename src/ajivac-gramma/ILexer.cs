@@ -59,6 +59,7 @@ public class Lexer : ILexer
 
             return NextTokenFromLast(TokenType.Identifier);
         }
+        LastIdentifier = null;
 
         if (LanguageDefinition.IsValidNumberBegin(_currentChar))
         {
@@ -70,6 +71,8 @@ public class Lexer : ILexer
             _buffer.Clear();
             return NextTokenFromLast(TokenType.Value);
         }
+        LastValue = null;
+
         //todo char and string and bool
 
         if (LanguageDefinition.IsCommentBegin(_currentChar))
