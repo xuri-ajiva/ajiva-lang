@@ -4,14 +4,30 @@ using ajivac_lib;
 
 Console.WriteLine("Ajiva Compiler");
 
-ILexer lexer = new Lexer(@"
+var src = @"
+native void System.Console.WriteLine(i32 s)
+fn i32 fac(i32 n) {
+    if (n == 0) {
+        return 1
+    } else {
+        return n * fac(n - 1)
+    }
+}
 @entry 
 #pure {*
+System.Console.WriteLine(fac(10))
 i32 a = 10 
-if ( !(a == 20) ) {
+if ( !(a != 20) ) {
     a = 10 + 2
+} 
+else
+{
+    a = a * 100
 }
-",
+a = a + fac(10)
+System.Console.WriteLine(a)
+";
+ILexer lexer = new Lexer(src,
     //https://en.cppreference.com/w/c/language/operator_precedence
     new Dictionary<TokenType, int>() {
         [TokenType.Comma] = 10,
@@ -64,14 +80,11 @@ if ( !(a == 20) ) {
         [TokenType.Decrement] = 170,
     });
 
-IParser parser = new Parser(lexer);
-lexer.ReadNextToken(); // lead first token
-while (lexer.CurrentToken.Type != TokenType.EOF)
-{
-    var expressionAst = parser.ParsePrimary();
-    Console.WriteLine(expressionAst?.GetType() + ": " + expressionAst?.Span);
-    Console.WriteLine(MakeIndentation(expressionAst));
-}
+Console.WriteLine(src);
+var parser = new Parser(lexer);
+var ast = parser.ParseAll();
+Console.WriteLine(ast.GetType() + ": " + ast.Span);
+Console.WriteLine(MakeIndentation(ast));
 
 string MakeIndentation(object? value)
 {
