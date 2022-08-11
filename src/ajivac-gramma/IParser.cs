@@ -221,12 +221,29 @@ public class Parser : IParser
                 return LoadNativeDefinition();
             case TokenType.Return:
                 return ParseReturn();
+            case TokenType.For:
+                return ParseFor();
             default:
                 throw new ($"Unexpected token {_lexer.CurrentToken.Type}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
         }
+    }
+
+    private IAstNode ParseFor()
+    {
+        var forToken = GuardAndEat(TokenType.For);
+        var open = GuardAndEat(TokenType.LParen);
+        var init = ParsePrimary();
+        var condition = ParseExpression();
+        var increment = ParsePrimary();
+        var close = GuardAndEat(TokenType.RParen);
+        var body = ParseBlock();
+        Debug.Assert(init != null, nameof(init) + " != null");
+        Debug.Assert(condition != null, nameof(condition) + " != null");
+        Debug.Assert(increment != null, nameof(increment) + " != null");
+        return new ForStatement(forToken.Span.Append(close.Span), init, condition, increment, body);
     }
 
     /// <inheritdoc />
