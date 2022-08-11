@@ -20,23 +20,27 @@ fn i32 fac(i32 n) {
 #pure {*
 Log(fac(10))
 i32 a = 10 
-if ( !(a != 20) ) {
-    a = 10 + 2
+if ( !(a == 20) ) {
+    a = 10 + 2 a = 3
 } 
 else
 {
     a = a * 100 + 2 + fac(5)
 }
+for (i32 i = 0 i < 10 i = i + 1) {
+    a = a + 1
+    Log(i)
+}
 System.Console.WriteLine(a)
 ";
-ILexer lexer = new Lexer(src);
+ILexer lexer = new Lexer(src.Replace("\r\n", "  "));
 
 Console.WriteLine(src.Replace("\r\n", "\r\n>  "));
 var parser = new Parser(lexer);
 var ast = parser.ParseAll();
-//Console.WriteLine(MakeIndentation(ast));
+Console.WriteLine(MakeIndentation(ast));
 
-Interpreter interpreter = new Interpreter(s => Debug.WriteLine(s));
+var interpreter = new Interpreter(s => Debug.WriteLine(s));
 interpreter.Load(parser.RuntimeState);
 interpreter.Run(ast);
 
