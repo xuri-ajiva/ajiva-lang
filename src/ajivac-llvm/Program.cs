@@ -31,6 +31,11 @@ for (i32 i = 0 i < 10 i = i + 1) {
     a = a + 1
     Log(i)
 }
+Log(a)
+while (a < 100) {
+    a = a + 1
+    Log(a)
+}
 System.Console.WriteLine(a)
 ";
 ILexer lexer = new Lexer(src.Replace("\r\n", "  "));

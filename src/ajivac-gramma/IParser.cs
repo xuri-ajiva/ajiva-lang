@@ -223,12 +223,23 @@ public class Parser : IParser
                 return ParseReturn();
             case TokenType.For:
                 return ParseFor();
+            case TokenType.While:
+                return ParseWhile();
             default:
                 throw new ($"Unexpected token {_lexer.CurrentToken.Type}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
         }
+    }
+
+    private IAstNode ParseWhile()
+    {
+        var whileToken = GuardAndEat(TokenType.While);
+        var condition = ParseExpression();
+        var body = ParseBlock();
+        Debug.Assert(condition != null, nameof(condition) + " != null");
+        return new WhileStatement(whileToken.Span.Append(body.Span), condition, body);
     }
 
     private IAstNode ParseFor()

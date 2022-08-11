@@ -51,11 +51,13 @@ public class Interpreter
                 SetVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
                 break;
             case IfExpression ifExpression:
-                var condition = EvaluateExpression(ifExpression.Condition);
-                logger($"Condition: ({ifExpression.Condition.Span}) {condition}");
-                Evaluate((condition is true
-                    ? ifExpression.ThenExpression
-                    : ifExpression.ElseExpression)!);
+                {
+                    var condition = EvaluateExpression(ifExpression.Condition);
+                    logger($"Condition: ({ifExpression.Condition.Span}) {condition}");
+                    Evaluate((condition is true
+                        ? ifExpression.ThenExpression
+                        : ifExpression.ElseExpression)!);
+                }
                 break;
             case IExpression expression:
                 EvaluateExpression(expression);
@@ -63,24 +65,35 @@ public class Interpreter
             case ReturnStatement returnStatement:
                 stack.Peek().Ret = EvaluateExpression(returnStatement.Expression);
                 break;
-            case ForStatement forStatement:
-                var initializer = forStatement.Initializer;
-                if (initializer is LocalVariableDeclaration lv)
+            case ForStatement(_, var initializer, var expression, var increment, var body):
                 {
-                    SetVariable(lv.Name, EvaluateExpression(lv.Initializer));
-                }
-                else
-                {
-                    Evaluate(initializer);
-                }
-                var cond = EvaluateExpression(forStatement.Condition);
-                while (cond is true)
-                {
-                    Evaluate(forStatement.Body);
-                    Evaluate(forStatement.Increment);
-                    cond = EvaluateExpression(forStatement.Condition);
+                    if (initializer is LocalVariableDeclaration localVariableDeclaration)
+                    {
+                        SetVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
+                    }
+                    else
+                    {
+                        Evaluate(initializer);
+                    }
+                    var cond = EvaluateExpression(expression);
+                    while (cond is true)
+                    {
+                        Evaluate(body);
+                        Evaluate(increment);
+                        cond = EvaluateExpression(expression);
+                    }
                 }
                 break;
+            case WhileStatement whileStatement:
+                {
+                    var condition = EvaluateExpression(whileStatement.Condition);
+                    while (condition is true)
+                    {
+                        Evaluate(whileStatement.Body);
+                        condition = EvaluateExpression(whileStatement.Condition);
+                    }
+                    break;
+                }
             case Prototype:
             case FunctionDefinition:
                 break;
