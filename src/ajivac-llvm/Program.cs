@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Threading.Channels;
 using ajivac_lib;
+using ajivac_llvm;
 
 Console.WriteLine("Ajiva Compiler");
 
@@ -85,6 +86,10 @@ var parser = new Parser(lexer);
 var ast = parser.ParseAll();
 Console.WriteLine(ast.GetType() + ": " + ast.Span);
 Console.WriteLine(MakeIndentation(ast));
+
+Interpreter interpreter = new Interpreter();
+interpreter.Load(parser.RuntimeState);
+interpreter.Run(ast);
 
 string MakeIndentation(object? value)
 {
