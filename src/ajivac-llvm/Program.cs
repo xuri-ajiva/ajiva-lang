@@ -1,11 +1,12 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Threading.Channels;
 using ajivac_lib;
 using ajivac_llvm;
 
 Console.WriteLine("Ajiva Compiler");
 
-var src = @"
+const string src = @"
 native void System.Console.WriteLine(i32 s)
 fn i32 fac(i32 n) {
     if (n == 0) {
@@ -23,9 +24,8 @@ if ( !(a != 20) ) {
 } 
 else
 {
-    a = a * 100
+    a = a * 100 + 2 + fac(5)
 }
-a = a + fac(10)
 System.Console.WriteLine(a)
 ";
 ILexer lexer = new Lexer(src);
@@ -33,10 +33,9 @@ ILexer lexer = new Lexer(src);
 Console.WriteLine(src.Replace("\r\n", "\r\n>  "));
 var parser = new Parser(lexer);
 var ast = parser.ParseAll();
-Console.WriteLine(ast.GetType() + ": " + ast.Span);
-Console.WriteLine(MakeIndentation(ast));
+//Console.WriteLine(MakeIndentation(ast));
 
-Interpreter interpreter = new Interpreter();
+Interpreter interpreter = new Interpreter(s => Debug.WriteLine(s));
 interpreter.Load(parser.RuntimeState);
 interpreter.Run(ast);
 

@@ -7,10 +7,15 @@ namespace ajivac_llvm;
 
 public class Interpreter
 {
+    private readonly Action<string> logger;
     private readonly Dictionary<string, MethodInfo> nativeMethods = new();
     private readonly Dictionary<string, FunctionDefinition> functionDefinitions = new();
     private readonly Stack<InternStackFrame> stack = new();
 
+    public Interpreter(Action<string> logger)
+    {
+        this.logger = logger;
+    }
     public class InternStackFrame
     {
         public Dictionary<string, object> Variables { get; set; } = new();
@@ -44,7 +49,7 @@ public class Interpreter
                 break;
             case IfExpression ifExpression:
                 var condition = EvaluateExpression(ifExpression.Condition);
-                Console.WriteLine($"Condition: ({ifExpression.Condition.Span}) {condition}");
+                logger($"Condition: ({ifExpression.Condition.Span}) {condition}");
                 Evaluate((condition is true
                     ? ifExpression.ThenExpression
                     : ifExpression.ElseExpression)!);
@@ -65,7 +70,7 @@ public class Interpreter
 
     private object? EvaluateFunctionCall(FunctionCallExpression functionCallExpression)
     {
-        Console.WriteLine($"calling {functionCallExpression.Callee.Name} with {functionCallExpression.Arguments.Count} arguments");
+        logger($"calling {functionCallExpression.Callee.Name} with {functionCallExpression.Arguments.Count} arguments");
         var func = functionDefinitions.GetValueOrDefault(functionCallExpression.Callee.Name);
         if (func is null) throw new Exception($"function {functionCallExpression.Callee.Name} not found");
         Dictionary<string, object> parameters = new();
@@ -84,7 +89,7 @@ public class Interpreter
         var callee = functionCallExpression.Callee;
         var args = functionCallExpression.Arguments.Select(EvaluateExpression).ToArray();
         var method = nativeMethods[callee.Name];
-        Console.WriteLine($"calling {functionCallExpression.Callee.Name}::{method.ToString()} with ({string.Join(", ", args)})");
+        logger($"calling {functionCallExpression.Callee.Name}::{method.ToString()} with ({string.Join(", ", args)})");
         return method.Invoke(null, args);
     }
 
@@ -208,7 +213,7 @@ public class Interpreter
         var frame = stack.Peek();
         if (frame.Variables.ContainsKey(name))
         {
-            Console.WriteLine($"get variable {name} with {frame.Variables[name]}");
+            logger($"get variable {name} with {frame.Variables[name]}");
             return frame.Variables[name];
         }
         throw new Exception($"Variable {name} not found");
@@ -217,22 +222,22 @@ public class Interpreter
     private void SetVariable(string name, object value)
     {
         var frame = stack.Peek();
-        Console.WriteLine($"set variable {name} to {value}");
+        logger($"set variable {name} to {value}");
         frame.Variables[name] = value;
     }
 
     private void PushStack()
     {
-        Console.WriteLine("new stack frame");
+        logger("new stack frame");
         stack.Push(new InternStackFrame());
     }
 
     private object? PopStack()
     {
-        Console.WriteLine("pop stack frame");
+        logger("pop stack frame");
         var ret = stack.Pop().Ret;
         if (ret is not null)
-            Console.WriteLine($"return {ret}");
+            logger($"return {ret}");
         return ret;
     }
 
@@ -269,16 +274,16 @@ public class Interpreter
             functionDefinitions.Add(key, value);
         }
 
-        Console.WriteLine("Resolved NativeMathods:");
+        logger("Resolved NativeMathods:");
         foreach (var (key, value) in nativeMethods)
         {
-            Console.WriteLine($"{key} -> {value}");
+            logger($"{key} -> {value}");
         }
 
-        Console.WriteLine("Resolved FunctionDefinitions:");
+        logger("Resolved FunctionDefinitions:");
         foreach (var (key, value) in functionDefinitions)
         {
-            Console.WriteLine($"{key} -> {value}");
+            logger($"{key} -> {value}");
         }
     }
 
