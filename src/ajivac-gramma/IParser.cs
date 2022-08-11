@@ -25,7 +25,7 @@ public interface IParser
     BaseNode ParsePreprocessor();
     IAstNode ParseBlock();
     IExpression? ParseExpression();
-    BaseNode ParseFunctionDefinition();
+    BaseNode LoadFunctionDefinition();
     BaseNode ParsArray();
     Token GuardAndEat(TokenType type);
     IAstNode ParseAll();
@@ -207,7 +207,7 @@ public class Parser : IParser
             case TokenType.Value:
                 return ParseValue();
             case TokenType.Fn:
-                return ParseFunctionDefinition();
+                return LoadFunctionDefinition();
             case TokenType.I32 or TokenType.I64 or TokenType.U32 or TokenType.U64 or TokenType.F32 or TokenType.F64 or TokenType.Chr or TokenType.Str or TokenType.Bit:
                 return ParseValue();
             case TokenType.Not or TokenType.Negate or TokenType.Increment or TokenType.Decrement:
@@ -462,38 +462,47 @@ public class Parser : IParser
         };
     }
 
-    public BaseNode ParseFunctionDefinition()
+    public BaseNode LoadFunctionDefinition()
     {
         var fn = GuardAndEat(TokenType.Fn);
+        var proto = ParsePrototype(false);
+        //for recursive functions we need to add the function to the list of functions
+        RuntimeState.FunctionDefinitions.Add(proto.Name, new FunctionDefinition(
+            proto.Span.Append(_lexer.CurrentToken.Span),
+            proto,
+            null!
+        ));
+        var body = ParseBlock();
+        var functionDefinition = new FunctionDefinition(
+            proto.Span.Append(_lexer.CurrentToken.Span),
+            proto,
+            body
+        );
+        //update the function definition in the list of functions
+        RuntimeState.FunctionDefinitions[proto.Name] = functionDefinition;
+        return functionDefinition;
+    }
+
+    private Prototype ParsePrototype(bool isExtern)
+    {
         var type = ParseBuildInType(out var buildInType);
         var identifier = ParseIdentifier();
         var openParen = GuardAndEat(TokenType.LParen);
         var i = 0;
         var arguments = ParseCommaSeparatedList(() =>
         {
-            var parameter = ParseLocalVariableDeclaration();
-            return (ParameterDeclaration)parameter with { Index = i++ };
+            var (sourceSpan, name, typeReference, initializer, isCompilerGenerated) = ParseLocalVariableDeclaration();
+            return new ParameterDeclaration(sourceSpan, i++, name, typeReference, initializer, isCompilerGenerated);
         });
         var closeParen = GuardAndEat(TokenType.RParen);
-        GuardAndEat(TokenType.LBrace);
-        var body = ParseBlock();
-        GuardAndEat(TokenType.RBrace);
-
         var proto = new Prototype(
-            fn.Span.Append(closeParen.Span),
+            type.Span.Append(closeParen.Span),
             identifier.Identifier,
-            false,
+            isExtern,
             arguments,
             new BuildInTypeReference(buildInType)
         );
-
-        var def = new FunctionDefinition(
-            fn.Span.Append(_lexer.CurrentToken.Span),
-            proto,
-            body
-        );
-        RuntimeState.FunctionDefinitions.Add(proto.Name, def);
-        return def;
+        return proto;
     }
 
     public BaseNode ParsArray()
