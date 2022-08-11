@@ -9,9 +9,9 @@ Console.WriteLine("Ajiva Compiler");
 const string src = @"
 native void System.Console.WriteLine(i32 s)
 fn i32 fac(i32 n) {
-    if (n == 0) {
+    if (n == 0) 
         return 1
-    } else {
+    else {
         return n * fac(n - 1)
     }
 }

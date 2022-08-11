@@ -360,6 +360,10 @@ public class Parser : IParser
         }
 
         var pos = _lexer.CurrentToken.Span;
+        //we have a singel line block
+        if (_lexer.CurrentToken.Type != TokenType.LBrace)
+            return ParsePrimary()!;
+
         GuardAndEat(TokenType.LBrace);
         if (_lexer.CurrentToken.Type == TokenType.Star)
         {
