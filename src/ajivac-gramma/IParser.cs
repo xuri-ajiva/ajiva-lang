@@ -170,7 +170,7 @@ public class Parser : IParser
         }
 
         // search extern declarations
-        return RuntimeState.FunctionDeclarations.TryGetValue(calleeName, out Prototype? declaration)
+        return RuntimeState.NativeFunctionDeclarations.TryGetValue(calleeName, out Prototype? declaration)
             ? declaration
             : null;
     }
@@ -215,11 +215,36 @@ public class Parser : IParser
                 return ParseIf();
             case TokenType.Identifier:
                 return ParseComplexIdentifier();
+            case TokenType.Native:
+                return LoadNativeDefinition();    
+            case TokenType.Return:
+                return ParseReturn();
             default:
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
         }
+    }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return _lexer?.CurrentToken?.ToString() ?? "<no instruction>";
+    }
+
+    private IAstNode ParseReturn()
+    {
+        var returnToken = GuardAndEat(TokenType.Return);
+        var expression = ParseExpression();
+        return new ReturnStatement(returnToken.Span.Append(expression.Span), expression);
+    }
+
+    private IAstNode LoadNativeDefinition()
+    {
+        var native = GuardAndEat(TokenType.Native);
+        var prototype = ParsePrototype(true);
+        RuntimeState.NativeFunctionDeclarations.Add(prototype.Name, prototype);
+        return prototype;
     }
 
     public IExpression ParseParenthesis()
@@ -485,7 +510,7 @@ public class Parser : IParser
 }
 public class RuntimeStateHolder
 {
-    public Dictionary<string, Prototype> FunctionDeclarations { get; set; } = new();
+    public Dictionary<string, Prototype> NativeFunctionDeclarations { get; set; } = new();
     public Dictionary<string, FunctionDefinition> FunctionDefinitions { get; set; } = new();
 }
 internal class UndefinedPreprocessorException : Exception

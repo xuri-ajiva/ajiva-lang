@@ -27,6 +27,7 @@ public enum TokenType
     Attribute,
     Preprocessor,
     Identifier,
+    Native,
 
     I32,
     U32,

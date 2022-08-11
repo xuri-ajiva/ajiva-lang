@@ -206,6 +206,7 @@ public class LanguageDefinition
             [TokenType.Break] = "break",
             [TokenType.Continue] = "continue",
 
+            [TokenType.Native] = "native",
             [TokenType.Fn] = "fn",
             [TokenType.Return] = "return",
 
