@@ -71,4 +71,19 @@ public class AstVisitorBase<TResult>
 
     /// <inheritdoc />
     public TResult Visit(AssignmentExpression node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(BreakStatement node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(ReturnStatement node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(WhileStatement node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(ForStatement node) => VisitChildren(node);
+
+    /// <inheritdoc />
+    public TResult Visit(ContinueStatement node) => VisitChildren(node);
 }

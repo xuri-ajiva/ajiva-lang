@@ -8,9 +8,10 @@ public abstract record BaseNode(SourceSpan Span) : IAstNode
 
     protected bool PrintList(StringBuilder builder, string name, IEnumerable<IAstNode> astNodes)
     {
-        builder.Append("Children = [");
+        builder.Append(name);
+        builder.Append(" = [");
         bool first = true;
-        foreach (var astNode in Children)
+        foreach (var astNode in astNodes)
         {
             if (first)
                 first = false;
@@ -145,6 +146,25 @@ public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyLi
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Parameters;
+
+    /// <inheritdoc />
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append(nameof(Name));
+        builder.Append(" = ");
+        builder.Append(Name);
+        builder.Append(", ");
+        builder.Append(nameof(IsExtern));
+        builder.Append(" = ");
+        builder.Append(IsExtern);
+        builder.Append(", ");
+        PrintList(builder, nameof(Parameters), Parameters);
+        builder.Append(", ");
+        builder.Append(nameof(ReturnType));
+        builder.Append(" = ");
+        builder.Append(ReturnType);
+        return true;
+    }
 }
 public record FunctionCallExpression(SourceSpan Span, Prototype Callee, List<IExpression> Arguments) : BaseNode(Span), IExpression
 {
@@ -155,6 +175,17 @@ public record FunctionCallExpression(SourceSpan Span, Prototype Callee, List<IEx
     public override IEnumerable<IAstNode> Children
     {
         get { yield return Callee; }
+    }
+
+    /// <inheritdoc />
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append(nameof(Callee));
+        builder.Append(" = ");
+        builder.Append(Callee);
+        builder.Append(", ");
+        PrintList(builder, nameof(Arguments), Arguments);
+        return true;
     }
 }
 public record FunctionDefinition(SourceSpan Span, Prototype Signature, IAstNode Body, bool IsAnonymous = false) : BaseNode(Span)
@@ -218,4 +249,56 @@ public record IfExpression(
             yield return ElseExpression;
         }
     }
+}
+public record ReturnStatement(SourceSpan Span, IExpression? Expression) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+
+    /// <inheritdoc />
+    public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+}
+
+public record WhileStatement(SourceSpan Span, IExpression Condition, IAstNode Body) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override IEnumerable<IAstNode> Children
+    {
+        get
+        {
+            yield return Condition;
+            yield return Body;
+        }
+    }
+}
+
+public record ForStatement(SourceSpan Span, IAstNode Initializer, IExpression Condition, IAstNode Increment, IAstNode Body) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override IEnumerable<IAstNode> Children
+    {
+        get
+        {
+            yield return Initializer;
+            yield return Condition;
+            yield return Increment;
+            yield return Body;
+        }
+    }
+}
+
+public record BreakStatement(SourceSpan Span) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+}
+
+public record ContinueStatement(SourceSpan Span) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }

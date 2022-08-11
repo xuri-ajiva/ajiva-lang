@@ -16,4 +16,9 @@ public interface IAstVisitor<out TResult>
     TResult Visit(AttributeEaSt node);
     TResult Visit(IfExpression node);
     TResult Visit(AssignmentExpression node);
+    TResult Visit(BreakStatement node);
+    TResult Visit(ReturnStatement node);
+    TResult Visit(WhileStatement node);
+    TResult Visit(ForStatement node);
+    TResult Visit(ContinueStatement node);
 }
