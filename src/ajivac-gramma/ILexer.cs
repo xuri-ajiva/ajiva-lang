@@ -19,7 +19,7 @@ public interface ILexer
 public class Lexer : ILexer
 {
     /// <inheritdoc />
-    public Token CurrentToken { get; set; } 
+    public Token CurrentToken { get; set; }
 
     /// <inheritdoc />
     public string LastIdentifier { get; set; }
@@ -71,9 +71,28 @@ public class Lexer : ILexer
             _buffer.Clear();
             return NextTokenFromLast(TokenType.Value);
         }
+
+        if (LanguageDefinition.IsStringBegin(_currentChar))
+        {
+            while (!LanguageDefinition.IsStringEnd(ReadNextChar()))
+                _buffer.Append(_currentChar);
+
+            LastValue = _buffer.ToString();
+            _buffer.Clear();
+            return NextTokenFromLast(TokenType.Value);
+        }
+        
+        if (LanguageDefinition.IsCharBegin(_currentChar))
+        {
+            while (!LanguageDefinition.IsCharEnd(ReadNextChar()))
+                _buffer.Append(_currentChar);
+
+            LastValue = _buffer.ToString();
+            _buffer.Clear();
+            return NextTokenFromLast(TokenType.Value);
+        }
         LastValue = null;
 
-        //todo char and string and bool
 
         if (LanguageDefinition.IsCommentBegin(_currentChar))
         {
@@ -153,7 +172,7 @@ public class Lexer : ILexer
         return (char)_reader.Peek();
     }
 
-    public Lexer(string text) : this(text, 
+    public Lexer(string text) : this(text,
         //https://en.cppreference.com/w/c/language/operator_precedence
         new Dictionary<TokenType, int>() {
             [TokenType.Comma] = 10,
@@ -207,6 +226,7 @@ public class Lexer : ILexer
         })
     {
     }
+
     private Lexer(string text, Dictionary<TokenType, int> binOpPrecedence)
     {
         _reader = new StringReader(text);
@@ -420,4 +440,12 @@ public class LanguageDefinition
         };
         return buildInType != BuildInType.Unknown;
     }
+
+    public static bool IsStringBegin(char currentChar) => currentChar is '"';
+
+    public static bool IsStringEnd(char peekNextChar) => IsStringBegin(peekNextChar);
+
+    public static bool IsCharBegin(char currentChar) => currentChar is '\'';
+
+    public static bool IsCharEnd(char peekNextChar) => IsCharBegin(peekNextChar);
 }
