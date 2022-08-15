@@ -225,12 +225,28 @@ public class Parser : IParser
                 return ParseFor();
             case TokenType.While:
                 return ParseWhile();
+            case TokenType.Break:
+                return ParseBreak();
+            case TokenType.Continue:
+                return ParseContinue();
             default:
-                throw new ($"Unexpected token {_lexer.CurrentToken.Type}");
+                throw new ($"Unexpected token {_lexer.CurrentToken}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
         }
+    }
+
+    private IAstNode ParseBreak()
+    {
+        var breakToken = GuardAndEat(TokenType.Break);
+        return new BreakStatement(breakToken.Span);
+    }
+
+    private IAstNode ParseContinue()
+    {
+        var continueToken = GuardAndEat(TokenType.Continue);
+        return new ContinueStatement(continueToken.Span);
     }
 
     private IAstNode ParseWhile()
