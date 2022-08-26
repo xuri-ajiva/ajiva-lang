@@ -48,7 +48,7 @@ public class Interpreter
                 }
                 break;
             case LocalVariableDeclaration localVariableDeclaration:
-                SetVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
+                CreateVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
                 break;
             case IfExpression ifExpression:
                 {
@@ -69,7 +69,7 @@ public class Interpreter
                 {
                     if (initializer is LocalVariableDeclaration localVariableDeclaration)
                     {
-                        SetVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
+                        CreateVariable(localVariableDeclaration.Name, EvaluateExpression(localVariableDeclaration.Initializer));
                     }
                     else
                     {
@@ -102,28 +102,28 @@ public class Interpreter
         }
     }
 
-    private object? EvaluateFunctionCall(FunctionCallExpression functionCallExpression)
+    private object? EvaluateFunctionCall(Prototype prototype, IReadOnlyList<IExpression> arguments)
     {
-        logger($"calling {functionCallExpression.Callee.Name} with {functionCallExpression.Arguments.Count} arguments");
-        var func = functionDefinitions.GetValueOrDefault(functionCallExpression.Callee.Name);
-        if (func is null) throw new Exception($"function {functionCallExpression.Callee.Name} not found");
+        logger($"calling {prototype.Name} with {arguments.Count} arguments");
+        var func = functionDefinitions.GetValueOrDefault(prototype.Name);
+        if (func is null) throw new Exception($"function {prototype.Name} not found");
         Dictionary<string, object> parameters = new();
-        for (var index = 0; index < functionCallExpression.Callee.Parameters.Count; index++)
+        for (var index = 0; index < prototype.Parameters.Count; index++)
         {
-            var value = EvaluateExpression(functionCallExpression.Arguments[index]);
-            parameters[functionCallExpression.Callee.Parameters[index].Name] = value;
+            var value = EvaluateExpression(arguments[index]);
+            parameters[prototype.Parameters[index].Name] = value;
         }
         stack.Push(new InternStackFrame { Variables = parameters });
         Evaluate(func.Body);
         return PopStack();
     }
 
-    private object? EvaluateExtern(FunctionCallExpression functionCallExpression)
+    private object? EvaluateExtern(Prototype prototype, IEnumerable<IExpression> arguments)
     {
-        var callee = functionCallExpression.Callee;
-        var args = functionCallExpression.Arguments.Select(EvaluateExpression).ToArray();
+        var callee = prototype;
+        var args = arguments.Select(EvaluateExpression).ToArray();
         var method = nativeMethods[callee.Name];
-        logger($"calling {functionCallExpression.Callee.Name}::{method.ToString()} with ({string.Join(", ", args)})");
+        logger($"calling {prototype.Name}::{method.ToString()} with ({string.Join(", ", args)})");
         return method.Invoke(null, args);
     }
 
@@ -152,9 +152,7 @@ public class Interpreter
             case ValueExpression<char> chr:
                 return chr.Value;
             case FunctionCallExpression functionCallExpression:
-                return (functionCallExpression.Callee.IsExtern
-                    ? EvaluateExtern(functionCallExpression)
-                    : EvaluateFunctionCall(functionCallExpression))!;
+                return CallFunction(functionCallExpression.Callee, functionCallExpression.Arguments)!;
             case IdentifierExpression variableExpression:
                 return GetVariable(variableExpression.Identifier);
             case AssignmentExpression assignmentExpression:
@@ -163,6 +161,13 @@ public class Interpreter
                 return value;
         }
         throw new NotImplementedException(node.ToString());
+    }
+
+    private object? CallFunction(Prototype prototype, IReadOnlyList<IExpression> arguments)
+    {
+        return prototype.IsExtern
+            ? EvaluateExtern(prototype, arguments)
+            : EvaluateFunctionCall(prototype, arguments);
     }
 
     private object EvaluateBinUnary(IExpression node)
@@ -244,20 +249,39 @@ public class Interpreter
 
     private object GetVariable(string name)
     {
-        var frame = stack.Peek();
-        if (frame.Variables.ContainsKey(name))
+        int index = 0;
+        foreach (var frame in stack)
         {
-            logger($"get variable {name} with {frame.Variables[name]}");
+            index++;
+            if (!frame.Variables.ContainsKey(name))
+                continue;
+            logger($"get variable {name} with {frame.Variables[name]} on stack [{index}]");
             return frame.Variables[name];
         }
         throw new Exception($"Variable {name} not found");
     }
 
-    private void SetVariable(string name, object value)
+    private void CreateVariable(string name, object value)
     {
         var frame = stack.Peek();
         logger($"set variable {name} to {value}");
         frame.Variables[name] = value;
+    }
+
+    private void SetVariable(string name, object value)
+    {
+        int index = 0;
+        foreach (var frame in stack)
+        {
+            index++;
+            if (!frame.Variables.ContainsKey(name))
+                continue;
+            logger($"updated variable {name} from {frame.Variables[name]} to {value} on stack [{index}]");
+            frame.Variables[name] = value;
+            return;
+        }
+
+        throw new Exception($"Variable {name} not found");
     }
 
     private void PushStack()
