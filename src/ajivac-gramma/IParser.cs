@@ -166,15 +166,19 @@ public class Parser : IParser
     private Prototype? FindCallTarget(string calleeName)
     {
         // search defined functions first as they override extern declarations
-        if (RuntimeState.FunctionDefinitions.TryGetValue(calleeName, out FunctionDefinition? definition))
+        foreach (var functionDefinition in RuntimeState.FunctionDefinitions)
         {
-            return definition.Signature;
+            if (functionDefinition.Signature.Name == calleeName)
+                return functionDefinition.Signature;
         }
 
         // search extern declarations
-        return RuntimeState.NativeFunctionDeclarations.TryGetValue(calleeName, out Prototype? declaration)
-            ? declaration
-            : null;
+        foreach (var externDeclaration in RuntimeState.NativeFunctionDeclarations)
+        {
+            if (externDeclaration.Name == calleeName)
+                return externDeclaration;
+        }
+        return null;
     }
 
     public RuntimeStateHolder RuntimeState { get; } = new();
@@ -187,7 +191,7 @@ public class Parser : IParser
         var closing = GuardAndEat(TokenType.RParen);
         return new FunctionCallExpression(
             fctName.Span.Append(closing.Span),
-            FindCallTarget(fctName.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", fctName.Identifier),
+            fctName.Identifier,//FindCallTarget(fctName.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", fctName.Identifier),
             arguments);
     }
 
@@ -230,7 +234,7 @@ public class Parser : IParser
             case TokenType.Continue:
                 return ParseContinue();
             default:
-                throw new ($"Unexpected token {_lexer.CurrentToken}");
+                throw new($"Unexpected token {_lexer.CurrentToken}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
@@ -290,7 +294,7 @@ public class Parser : IParser
     {
         var native = GuardAndEat(TokenType.Native);
         var prototype = ParsePrototype(true);
-        RuntimeState.NativeFunctionDeclarations.Add(prototype.Name, prototype);
+        RuntimeState.NativeFunctionDeclarations.Add(prototype);
         return prototype;
     }
 
@@ -322,7 +326,7 @@ public class Parser : IParser
             var closing = GuardAndEat(TokenType.RParen);
             return new FunctionCallExpression(
                 identifier.Span.Append(closing.Span),
-                FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
+                identifier.Identifier,//FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
                 arguments);
         }
         if (_lexer.CurrentToken.Type == TokenType.Assign)
@@ -387,7 +391,7 @@ public class Parser : IParser
                     ParseBlock(),
                     true
                 );
-                RuntimeState.FunctionDefinitions.Add(proto.Name, functionDefinition);
+                RuntimeState.FunctionDefinitions.Add(functionDefinition);
                 return functionDefinition;
             default:
                 throw new UndefinedPreprocessorException(identifier);
@@ -516,21 +520,14 @@ public class Parser : IParser
     {
         var fn = GuardAndEat(TokenType.Fn);
         var proto = ParsePrototype(false);
-        //for recursive functions we need to add the function to the list of functions
-        RuntimeState.FunctionDefinitions.Add(proto.Name, new FunctionDefinition(
+        var def = new FunctionDefinition(
             proto.Span.Append(_lexer.CurrentToken.Span),
-            proto,
-            null!
-        ));
-        var body = ParseBlock();
-        var functionDefinition = new FunctionDefinition(
-            proto.Span.Append(_lexer.CurrentToken.Span),
-            proto,
-            body
+            proto
         );
-        //update the function definition in the list of functions
-        RuntimeState.FunctionDefinitions[proto.Name] = functionDefinition;
-        return functionDefinition;
+        RuntimeState.FunctionDefinitions.Add(def);
+        var body = ParseBlock();
+        def.Body = body;
+        return def;
     }
 
     private Prototype ParsePrototype(bool isExtern)
@@ -583,8 +580,8 @@ public class Parser : IParser
 }
 public class RuntimeStateHolder
 {
-    public Dictionary<string, Prototype> NativeFunctionDeclarations { get; set; } = new();
-    public Dictionary<string, FunctionDefinition> FunctionDefinitions { get; set; } = new();
+    public List<Prototype> NativeFunctionDeclarations { get; set; } = new();
+    public List<FunctionDefinition> FunctionDefinitions { get; set; } = new();
 }
 internal class UndefinedPreprocessorException : Exception
 {

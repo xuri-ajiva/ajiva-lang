@@ -5,7 +5,7 @@ public interface IAstNode
     SourceSpan Span { get; }
     IEnumerable<IAstNode> Children { get; }
 
-    TResult? Accept<TResult>( IAstVisitor<TResult> visitor )
+    TResult? Accept<TResult>(IAstVisitor<TResult> visitor)
         where TResult : class;
 }
 

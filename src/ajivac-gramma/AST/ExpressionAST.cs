@@ -166,7 +166,7 @@ public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyLi
         return true;
     }
 }
-public record FunctionCallExpression(SourceSpan Span, Prototype Callee, List<IExpression> Arguments) : BaseNode(Span), IExpression
+public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IExpression> Arguments) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
     public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
@@ -174,22 +174,32 @@ public record FunctionCallExpression(SourceSpan Span, Prototype Callee, List<IEx
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
     {
-        get { yield return Callee; }
+        get
+        {
+            yield break;
+            //yield return Callee;
+        }
     }
 
     /// <inheritdoc />
     protected override bool PrintMembers(StringBuilder builder)
     {
-        builder.Append(nameof(Callee));
+        builder.Append(nameof(CalleeName));
         builder.Append(" = ");
-        builder.Append(Callee);
+        builder.Append(CalleeName);
         builder.Append(", ");
         PrintList(builder, nameof(Arguments), Arguments);
         return true;
     }
 }
-public record FunctionDefinition(SourceSpan Span, Prototype Signature, IAstNode Body, bool IsAnonymous = false) : BaseNode(Span)
+public record FunctionDefinition(SourceSpan Span, Prototype Signature,  bool IsAnonymous = false) : BaseNode(Span)
 {
+    public FunctionDefinition(SourceSpan span, Prototype signature, IAstNode body, bool isAnonymous = false) : this(span, signature, isAnonymous)
+    {
+        Body = body;
+    }
+    
+    public IAstNode Body { get; set; }
     /// <inheritdoc />
     public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
 
