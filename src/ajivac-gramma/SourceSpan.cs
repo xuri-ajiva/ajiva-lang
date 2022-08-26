@@ -5,6 +5,7 @@ public struct SourceSpan
     public uint Position;
     public uint Length;
     public string Source;
+    public static SourceSpan Empty { get; } = new SourceSpan { Source = " " };
 
     public string GetValue()
     {
