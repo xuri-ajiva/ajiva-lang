@@ -18,7 +18,8 @@ fn i32 fac(i32 n) {
 }
 @entry 
 #pure {*
-Log(fac(10))
+System.Console.Write(""fac(10) = "");
+System.Console.WriteLine(fac(10))
 i32 a = 10 
 if ( !(a == 20) ) {
     a = 10 + 2 a = 3
@@ -31,17 +32,18 @@ for (i32 i = 0 i < 10 i = i + 1) {
     a = a + 1
     Log(i)
 }
-Log(a)
+a = 0
 while (a < 100) {
     a = a + 1
-    Log(a)
-    if (a == 50) {
-        break
-    }
-    if(a < 10) {
-        Log(8888)
+    if(a < 5) {
+        System.Console.WriteLine(""Continue"")
         continue
-        Log(99999)
+        System.Console.WriteLine(""FAIL"")
+    }
+    Log(a)
+    if (a == 10) {        
+        System.Console.WriteLine(""Break"")
+        break
     }
 }
 System.Console.WriteLine(a)
