@@ -233,12 +233,20 @@ public class Parser : IParser
                 return ParseBreak();
             case TokenType.Continue:
                 return ParseContinue();
+            case TokenType.Semicolon:
+                return ParseEmptyStatement();
             default:
                 throw new($"Unexpected token {_lexer.CurrentToken}");
                 _lexer.ReadNextToken(); // eat token
                 return null;
             //ThrowUnexpected(TokenType.Unknown);
         }
+    }
+
+    private IAstNode ParseEmptyStatement()
+    {
+        var token = _lexer.ReadNextToken();
+        return new EmptyStatement(token.Span);
     }
 
     private IAstNode ParseBreak()

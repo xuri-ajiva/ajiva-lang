@@ -312,3 +312,10 @@ public record ContinueStatement(SourceSpan Span) : BaseNode(Span)
     public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
+public record EmptyStatement(SourceSpan Span) : BaseNode(Span)
+{
+    /// <inheritdoc />
+    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => null;
+    public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+}
+

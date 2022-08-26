@@ -132,6 +132,7 @@ public class Interpreter
                 _functionResolver.AddFunction(function);
                 return null;
             case null:
+            case EmptyStatement:
                 return null;
             default:
                 throw new NotImplementedException(node.ToString());
@@ -162,8 +163,8 @@ public class Interpreter
                 case ContinueStatement:
                     throw new("break or continue not allowed in function");
                 case ReturnStatement returnStatement:
-                    var  ret = returnStatement.Expression is not null 
-                        ? EvaluateExpression(returnStatement.Expression) 
+                    var ret = returnStatement.Expression is not null
+                        ? EvaluateExpression(returnStatement.Expression)
                         : null;
                     _stackManager.Pop();
                     return ret;

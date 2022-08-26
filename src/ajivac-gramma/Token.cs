@@ -16,6 +16,12 @@ public class Token
         Type = type;
         Span = sourceSpan;
     }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return $"{nameof(Type)}: {Type}, {nameof(Span)}: {Span}";
+    }
 }
 public enum TokenType
 {

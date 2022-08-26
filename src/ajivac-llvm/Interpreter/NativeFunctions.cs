@@ -6,6 +6,6 @@ public static class NativeFunctions
     public static void Log(string message) => LogCore(message);
     private static void LogCore(object message)
     {
-        //Console.WriteLine("Log: " + message);
+        Console.WriteLine("Log: " + message);
     }
 }
