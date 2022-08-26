@@ -35,19 +35,66 @@ Log(a)
 while (a < 100) {
     a = a + 1
     Log(a)
+    if (a == 50) {
+        break
+    }
+    if(a < 10) {
+        Log(8888)
+        continue
+        Log(99999)
+    }
 }
 System.Console.WriteLine(a)
 ";
-ILexer lexer = new Lexer(src.Replace("\r\n", "  "));
+const string src2 = @"
+@entry(10)
+fn i32 fac(i32 n) {
+    if (n == 0) 
+        return 1
+    else {
+        return n * fac(n - 1)
+    }
+}
+";
+const string fisBuzz = @"
+native void Log(i32 i)
+native void Log(str s)
+@entry(100)
+fn void fizzbuzz(i32 n) {
+    for (i32 i = 0 i < n i = i + 1) {
+        if ((i % 3) == 0) {
+            if ((i % 5) == 0) {
+                Log(""FizzBuzz"")
+            } else {
+                Log(""Fizz"")
+            }
+        } else if ((i % 5) == 0) {
+            Log(""Buzz"")
+        } else {
+            Log(i)
+        }
+    }
+}
+";
 
-Console.WriteLine(src.Replace("\r\n", "\r\n>  "));
+const string selected = src;
+ILexer lexer = new Lexer(selected.Replace("\r\n", "  "));
+
+Console.WriteLine(selected.Replace("\r\n", "\r\n>  "));
 var parser = new Parser(lexer);
+var time = BeginTime();
 var ast = parser.ParseAll();
-Console.WriteLine(MakeIndentation(ast));
+EndTime("Parse", time);
+//Console.WriteLine(MakeIndentation(ast));
 
 var interpreter = new Interpreter(s => Debug.WriteLine(s));
+time = BeginTime();
 interpreter.Load(parser.RuntimeState);
+EndTime("Interpreter.Load", time);
+
+time = BeginTime();
 interpreter.Run(ast);
+EndTime("Interpreter.Run", time);
 
 string MakeIndentation(object? value)
 {
@@ -106,4 +153,12 @@ string MakeIndentation(object? value)
         }
     }
     return buffer.ToString();
+}
+
+long BeginTime() => DateTime.Now.Ticks;
+
+void EndTime(string name, long start)
+{
+    var end = DateTime.Now.Ticks;
+    Console.WriteLine($"{name} took {(end - start) / 10000}ms");
 }
