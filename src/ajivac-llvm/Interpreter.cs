@@ -38,7 +38,22 @@ public class Interpreter
                 if (attributeEaSt.Name == "entry")
                 {
                     PushStack();
-                    Evaluate((attributeEaSt.Operand as FunctionDefinition)!.Body);
+                    if (attributeEaSt.Operand is FunctionDefinition fd)
+                    {
+                        var ret = CallFunction(fd.Signature, attributeEaSt.Arguments ?? new List<IExpression>());
+                        if (ret is not null)
+                        {
+                            Console.WriteLine("TLF: " + ret);
+                        }
+                    }
+                    else if (attributeEaSt.Operand is not null)
+                    {
+                        Evaluate(attributeEaSt.Operand);
+                    }
+                    else
+                    {
+                        throw new("Invalid Entry Point");
+                    }
                 }
                 break;
             case RootNode rootNode:
