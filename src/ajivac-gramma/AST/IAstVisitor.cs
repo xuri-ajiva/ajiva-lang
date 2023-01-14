@@ -1,24 +1,25 @@
 ﻿namespace ajivac_lib.AST;
 
-public interface IAstVisitor<out TResult>
-    where TResult : class
+public interface IAstVisitor<TResult, TArg>
+    where TResult : struct where TArg : struct
 {
-    TResult Visit(RootNode node);
-    TResult Visit<T>(ValueExpression<T> node);
-    TResult Visit(IdentifierExpression node);
-    TResult Visit(Prototype node);
-    TResult Visit(LocalVariableDeclaration node);
-    TResult Visit(BinaryExpression node);
-    TResult Visit(UnaryExpression node);
-    TResult Visit(FunctionCallExpression node);
-    TResult Visit(FunctionDefinition node);
-    TResult Visit(ParameterDeclaration node);
-    TResult Visit(AttributeEaSt node);
-    TResult Visit(IfExpression node);
-    TResult Visit(AssignmentExpression node);
-    TResult Visit(BreakStatement node);
-    TResult Visit(ReturnStatement node);
-    TResult Visit(WhileStatement node);
-    TResult Visit(ForStatement node);
-    TResult Visit(ContinueStatement node);
+    TResult Visit(RootNode node, ref TArg arg);
+    TResult Visit<T>(ValueExpression<T> node, ref TArg arg);
+    TResult Visit(IdentifierExpression node, ref TArg arg);
+    TResult Visit(Prototype node, ref TArg arg);
+    TResult Visit(LocalVariableDeclaration node, ref TArg arg);
+    TResult Visit(BinaryExpression node, ref TArg arg);
+    TResult Visit(UnaryExpression node, ref TArg arg);
+    TResult Visit(FunctionCallExpression node, ref TArg arg);
+    TResult Visit(FunctionDefinition node, ref TArg arg);
+    TResult Visit(ParameterDeclaration node, ref TArg arg);
+    TResult Visit(AttributeEaSt node, ref TArg arg);
+    TResult Visit(IfExpression node, ref TArg arg);
+    TResult Visit(AssignmentExpression node, ref TArg arg);
+    TResult Visit(BreakStatement node, ref TArg arg);
+    TResult Visit(ReturnStatement node, ref TArg arg);
+    TResult Visit(WhileStatement node, ref TArg arg);
+    TResult Visit(ForStatement node, ref TArg arg);
+    TResult Visit(ContinueStatement node, ref TArg arg);
+    TResult Default(ref TArg arg);
 }

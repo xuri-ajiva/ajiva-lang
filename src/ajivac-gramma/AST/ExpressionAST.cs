@@ -28,7 +28,7 @@ public abstract record BaseNode(SourceSpan Span) : IAstNode
         return false;
     }
 
-    public abstract TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class;
+    public abstract TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct;
 
     /// <inheritdoc />
     public abstract IEnumerable<IAstNode> Children { get; }
@@ -36,7 +36,7 @@ public abstract record BaseNode(SourceSpan Span) : IAstNode
 public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Childs;
@@ -49,7 +49,7 @@ public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode
 public record ValueExpression<T>(SourceSpan Span, T Value) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
@@ -70,7 +70,7 @@ public record ValueExpression<T>(SourceSpan Span, T Value) : BaseNode(Span), IEx
 public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
@@ -79,7 +79,7 @@ public record LocalVariableDeclaration(SourceSpan Span, string Name, TypeReferen
     : BaseNode(Span), IVariableDeclaration
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -96,7 +96,7 @@ public record LocalVariableDeclaration(SourceSpan Span, string Name, TypeReferen
 public record BinaryExpression(SourceSpan Span, BinaryOperator Operator, IExpression Left, IExpression Right) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -111,7 +111,7 @@ public record BinaryExpression(SourceSpan Span, BinaryOperator Operator, IExpres
 public record UnaryExpression(SourceSpan Span, UnaryOperator Operator, IExpression Operand) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -122,14 +122,14 @@ public record UnaryExpression(SourceSpan Span, UnaryOperator Operator, IExpressi
 public record ParameterDeclaration(SourceSpan Span, int Index, string Name, TypeReference TypeReference, IExpression? Initializer, bool IsCompilerGenerated = false)
     : LocalVariableDeclaration(Span, Name, TypeReference, Initializer, IsCompilerGenerated)
 {
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
 public record AssignmentExpression(SourceSpan Span, string Name, IExpression? AssignmentValue) : BaseNode(Span), IExpression
 {
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -142,7 +142,7 @@ public record AssignmentExpression(SourceSpan Span, string Name, IExpression? As
 }
 public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyList<ParameterDeclaration> Parameters, TypeReference ReturnType, bool IsCompilerGenerated = false) : BaseNode(Span)
 {
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Parameters;
@@ -169,7 +169,7 @@ public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyLi
 public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IExpression> Arguments) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -192,16 +192,17 @@ public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IE
         return true;
     }
 }
-public record FunctionDefinition(SourceSpan Span, Prototype Signature,  bool IsAnonymous = false) : BaseNode(Span)
+public record FunctionDefinition(SourceSpan Span, Prototype Signature, bool IsAnonymous = false) : BaseNode(Span)
 {
     public FunctionDefinition(SourceSpan span, Prototype signature, IAstNode body, bool isAnonymous = false) : this(span, signature, isAnonymous)
     {
         Body = body;
     }
-    
+
     public IAstNode Body { get; set; }
+
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     public override IEnumerable<IAstNode> Children
     {
@@ -219,7 +220,7 @@ public record FunctionDefinition(SourceSpan Span, Prototype Signature,  bool IsA
 public record AttributeEaSt(SourceSpan Span, string Name, IAstNode? Operand, IReadOnlyList<IExpression>? Arguments) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -247,7 +248,7 @@ public record IfExpression(
     LocalVariableDeclaration? ResultVar) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children
@@ -263,16 +264,16 @@ public record IfExpression(
 public record ReturnStatement(SourceSpan Span, IExpression? Expression) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
-
 public record WhileStatement(SourceSpan Span, IExpression Condition, IAstNode Body) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
+
     public override IEnumerable<IAstNode> Children
     {
         get
@@ -282,11 +283,11 @@ public record WhileStatement(SourceSpan Span, IExpression Condition, IAstNode Bo
         }
     }
 }
-
 public record ForStatement(SourceSpan Span, IAstNode Initializer, IExpression Condition, IAstNode Increment, IAstNode Body) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
+
     public override IEnumerable<IAstNode> Children
     {
         get
@@ -298,24 +299,24 @@ public record ForStatement(SourceSpan Span, IAstNode Initializer, IExpression Co
         }
     }
 }
-
 public record BreakStatement(SourceSpan Span) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
+
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
-
 public record ContinueStatement(SourceSpan Span) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => visitor.Visit(this);
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
+
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
 public record EmptyStatement(SourceSpan Span) : BaseNode(Span)
 {
     /// <inheritdoc />
-    public override TResult? Accept<TResult>(IAstVisitor<TResult> visitor) where TResult : class => null;
+    public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Default(ref arg);
+
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
-

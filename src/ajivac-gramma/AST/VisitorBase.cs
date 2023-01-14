@@ -1,89 +1,77 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace ajivac_lib.AST;
 
-public class AstVisitorBase<TResult>
-    : IAstVisitor<TResult>
-    where TResult : class
+public class AstVisitorBase<TResult, TArg>
+    : IAstVisitor<TResult, TArg>
+    where TResult : struct where TArg : struct
 {
-    private IAstVisitor<TResult> _astVisitorImplementation;
-
-    public virtual TResult? VisitChildren(IAstNode? node)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private TResult VisitChildren(IAstNode? node, ref TArg arg)
     {
-        if (node is null) ThrowHelper.ThrowArgumentNullException(nameof(node));
-
-        var result = DefaultResult;
-        foreach (var child in node.Children)
-        {
-            result = AggregateResult(result, child.Accept(this));
-        }
-        return result;
+        throw new UnreachableException("Their was a call to the baseVisitor");
     }
 
-    protected AstVisitorBase([AllowNull] TResult defaultResult)
+    /// <inheritdoc />
+    public virtual TResult Visit(RootNode node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit<T>(ValueExpression<T> node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(IdentifierExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(Prototype node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(LocalVariableDeclaration node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(BinaryExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(UnaryExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(FunctionCallExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(FunctionDefinition node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(ParameterDeclaration node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(AttributeEaSt node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(IfExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(AssignmentExpression node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(BreakStatement node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(ReturnStatement node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(WhileStatement node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(ForStatement node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public virtual TResult Visit(ContinueStatement node, ref TArg arg) => VisitChildren(node, ref arg);
+
+    /// <inheritdoc />
+    public TResult Default(ref TArg arg)
     {
-        DefaultResult = defaultResult;
+        return default;
     }
-
-    protected virtual TResult? AggregateResult(TResult? aggregate, TResult? newResult)
-    {
-        return newResult;
-    }
-
-    protected TResult? DefaultResult { get; }
-
-    /// <inheritdoc />
-    public TResult Visit(RootNode node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit<T>(ValueExpression<T> node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(IdentifierExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(Prototype node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(LocalVariableDeclaration node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(BinaryExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(UnaryExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(FunctionCallExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(FunctionDefinition node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(ParameterDeclaration node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(AttributeEaSt node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(IfExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(AssignmentExpression node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(BreakStatement node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(ReturnStatement node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(WhileStatement node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(ForStatement node) => VisitChildren(node);
-
-    /// <inheritdoc />
-    public TResult Visit(ContinueStatement node) => VisitChildren(node);
 }
