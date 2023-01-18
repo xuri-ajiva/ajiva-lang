@@ -1,23 +1,26 @@
 ﻿using ajivac_lib.AST;
+using ajivac_lib.ContextualAnalyzer.HelperStructs;
 using ajivac_lib.Visitor;
 
 namespace ajivac_lib.ContextualAnalyzer;
 
-public class SemanticsPass : AstVisitorBase<Void, Void>
+public class SemanticsPass : AstVisitorBase<NonRef, NonRef>
 {
+    private readonly Diagnostics _diagnostics;
     private RefPass _refPass;
     private TypePass _typePass;
 
-    public SemanticsPass()
+    public SemanticsPass(Diagnostics diagnostics)
     {
-        _refPass = new RefPass();
-        _typePass = new TypePass();
+        _diagnostics = diagnostics;
+        _refPass = new RefPass(diagnostics);
+        _typePass = new TypePass(diagnostics);
     }
 
-    public override Void Visit(RootNode node, ref Void arg)
+    public override NonRef Visit(RootNode node, ref NonRef arg)
     {
         _refPass.Visit(node, ref arg);
         _typePass.Visit(node, ref arg);
-        return Void.Empty;
+        return NonRef.Empty;
     }
 }
