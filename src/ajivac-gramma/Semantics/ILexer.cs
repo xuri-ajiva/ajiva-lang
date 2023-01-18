@@ -2,7 +2,7 @@
 using System.Text;
 using ajivac_lib.AST;
 
-namespace ajivac_lib;
+namespace ajivac_lib.Semantics;
 
 public interface ILexer
 {
@@ -423,22 +423,22 @@ public class LanguageDefinition
         return type is TokenType.I32 or TokenType.I64 or TokenType.U32 or TokenType.U64 or TokenType.F32 or TokenType.F64 or TokenType.Chr or TokenType.Str or TokenType.Bit;
     }
 
-    public static bool TryGetBuildInType(TokenType type, out BuildInType buildInType)
+    public static bool TryGetBuildInType(TokenType type, out TypeReference typeReference)
     {
-        buildInType = type switch {
-            TokenType.I32 => BuildInType.I32,
-            TokenType.I64 => BuildInType.I64,
-            TokenType.U32 => BuildInType.U32,
-            TokenType.U64 => BuildInType.U64,
-            TokenType.F32 => BuildInType.F32,
-            TokenType.F64 => BuildInType.F64,
-            TokenType.Chr => BuildInType.Chr,
-            TokenType.Str => BuildInType.Str,
-            TokenType.Bit => BuildInType.Bit,
-            TokenType.Void => BuildInType.Void,
-            _ => BuildInType.Unknown
+        typeReference = type switch {  //todo change to TypeKind
+            TokenType.I32 => TypeReference.I32,
+            TokenType.I64 => TypeReference.I64,
+            TokenType.U32 => TypeReference.U32,
+            TokenType.U64 => TypeReference.U64,
+            TokenType.F32 => TypeReference.F32,
+            TokenType.F64 => TypeReference.F64,
+            TokenType.Chr => TypeReference.Chr,
+            TokenType.Str => TypeReference.Str,
+            TokenType.Bit => TypeReference.Bit,
+            TokenType.Void => TypeReference.Void,
+            _ => TypeReference.Unknown
         };
-        return buildInType != BuildInType.Unknown;
+        return typeReference != TypeReference.Unknown;
     }
 
     public static bool IsStringBegin(char currentChar) => currentChar is '"';

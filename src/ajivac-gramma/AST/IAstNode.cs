@@ -1,4 +1,7 @@
-﻿namespace ajivac_lib.AST;
+﻿using ajivac_lib.Semantics;
+using ajivac_lib.Visitor;
+
+namespace ajivac_lib.AST;
 
 public interface IAstNode
 {

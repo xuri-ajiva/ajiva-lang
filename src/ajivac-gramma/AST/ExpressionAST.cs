@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using ajivac_lib.Semantics;
+using ajivac_lib.Visitor;
 
 namespace ajivac_lib.AST;
 
@@ -46,26 +48,13 @@ public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode
         return PrintList(builder, nameof(Children), Children);
     }
 }
-public record ValueExpression<T>(SourceSpan Span, T Value) : BaseNode(Span), IExpression
+public record LiteralExpression(SourceSpan Span, string Value, TypeReference ValueTypeReference) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
-
-    /// <inheritdoc />
-    protected override bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append(nameof(Value));
-        builder.Append(" = ");
-        builder.Append(Value);
-        builder.Append(", ");
-        builder.Append(nameof(Type));
-        builder.Append(" = ");
-        builder.Append(typeof(T));
-        return true;
-    }
 }
 public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNode(Span), IExpression
 {

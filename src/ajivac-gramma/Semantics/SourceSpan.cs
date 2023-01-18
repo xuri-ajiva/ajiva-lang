@@ -1,4 +1,4 @@
-﻿namespace ajivac_lib;
+﻿namespace ajivac_lib.Semantics;
 
 public struct SourceSpan
 {

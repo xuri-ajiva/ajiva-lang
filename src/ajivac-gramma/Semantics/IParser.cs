@@ -1,19 +1,16 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using System.Reflection.Emit;
 using ajivac_lib.AST;
 using BinaryExpression = ajivac_lib.AST.BinaryExpression;
 using UnaryExpression = ajivac_lib.AST.UnaryExpression;
 
-namespace ajivac_lib;
+namespace ajivac_lib.Semantics;
 
 public interface IParser
 {
-    BaseNode ParseValue();
-    BaseNode ParseValue(BuildInType numberType);
+    BaseNode ParseLiteral();
     IdentifierExpression ParseIdentifier();
-    Token ParseBuildInType(out BuildInType buildInType);
+    Token ParseBuildInType(out TypeReference typeReference);
     LocalVariableDeclaration ParseLocalVariableDeclaration();
     List<T> ParseCommaSeparatedList<T>(Func<T?> parse, TokenType endOfList = TokenType.RParen);
     BaseNode ParseAttribute();
@@ -40,48 +37,37 @@ public class Parser : IParser
         _lexer = lexer;
     }
 
-    public BaseNode ParseValue()
+    public BaseNode ParseLiteral()
     {
-        var v = _lexer.LastValue;
-        if (string.IsNullOrEmpty(v))
-            return ParseLocalVariableDeclaration();
-
-        if (int.TryParse(v, out _))
-            return ParseValue(BuildInType.I32);
-        if (long.TryParse(v, out _))
-            return ParseValue(BuildInType.I64);
-        if (bool.TryParse(v, out _))
-            return ParseValue(BuildInType.Bit);
-        if (uint.TryParse(v, out _))
-            return ParseValue(BuildInType.U32);
-        if (ulong.TryParse(v, out _))
-            return ParseValue(BuildInType.U64);
-        if (float.TryParse(v, out _))
-            return ParseValue(BuildInType.F32);
-        if (double.TryParse(v, out _))
-            return ParseValue(BuildInType.F64);
-        if (char.TryParse(v, out _))
-            return ParseValue(BuildInType.Chr);
-        return ParseValue(BuildInType.Str);
+        return string.IsNullOrEmpty(_lexer.LastValue)
+            ? ParseLocalVariableDeclaration()
+            : ParseLiteralExpression(_lexer.LastValue);
     }
 
-    public BaseNode ParseValue(BuildInType numberType)
+    private BaseNode ParseLiteralExpression(string literal)
     {
-        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        BaseNode res = numberType switch {
-            BuildInType.I32 => new ValueExpression<int>(_lexer.CurrentToken.Span, int.Parse(_lexer.LastValue)),
-            BuildInType.I64 => new ValueExpression<long>(_lexer.CurrentToken.Span, long.Parse(_lexer.LastValue)),
-            BuildInType.U32 => new ValueExpression<uint>(_lexer.CurrentToken.Span, uint.Parse(_lexer.LastValue)),
-            BuildInType.U64 => new ValueExpression<ulong>(_lexer.CurrentToken.Span, ulong.Parse(_lexer.LastValue)),
-            BuildInType.F32 => new ValueExpression<float>(_lexer.CurrentToken.Span, float.Parse(_lexer.LastValue)),
-            BuildInType.F64 => new ValueExpression<double>(_lexer.CurrentToken.Span, double.Parse(_lexer.LastValue)),
-            BuildInType.Chr => new ValueExpression<char>(_lexer.CurrentToken.Span, char.Parse(_lexer.LastValue)),
-            BuildInType.Str => new ValueExpression<string>(_lexer.CurrentToken.Span, (_lexer.LastValue)),
-            BuildInType.Bit => new ValueExpression<bool>(_lexer.CurrentToken.Span, bool.Parse(_lexer.LastValue)),
-            _ => throw new UnexpectedTokenException("Expected Number but got {Token}", _lexer.CurrentToken)
-        };
+        var span = _lexer.CurrentToken.Span;
+        TypeReference typeReference;
+
+        if (int.TryParse(literal, out _))
+            typeReference = TypeReference.I32;
+        else if (long.TryParse(literal, out _))
+            typeReference = TypeReference.I64;
+        else if (bool.TryParse(literal, out _))
+            typeReference = TypeReference.Bit;
+        else if (uint.TryParse(literal, out _))
+            typeReference = TypeReference.U32;
+        else if (ulong.TryParse(literal, out _))
+            typeReference = TypeReference.U64;
+        else if (float.TryParse(literal, out _))
+            typeReference = TypeReference.F32;
+        else if (double.TryParse(literal, out _))
+            typeReference = TypeReference.F64;
+        else if (char.TryParse(literal, out _))
+            typeReference = TypeReference.Chr;
+        else typeReference = TypeReference.Str;
         _lexer.ReadNextToken(); //eat number
-        return res;
+        return new LiteralExpression(span, literal, typeReference);
     }
 
     public IdentifierExpression ParseIdentifier()
@@ -92,10 +78,10 @@ public class Parser : IParser
         return res;
     }
 
-    public Token ParseBuildInType(out BuildInType buildInType)
+    public Token ParseBuildInType(out TypeReference typeReference)
     {
         var type = _lexer.CurrentToken;
-        if (!LanguageDefinition.TryGetBuildInType(type.Type, out buildInType))
+        if (!LanguageDefinition.TryGetBuildInType(type.Type, out typeReference))
             throw new UnexpectedTokenException("Expected Type but got {Token}", _lexer.CurrentToken);
         _lexer.ReadNextToken(); //eat type
         return type;
@@ -114,7 +100,7 @@ public class Parser : IParser
         return new LocalVariableDeclaration(
             type.Span.Append(identifier.Span),
             identifier.Identifier,
-            new BuildInTypeReference(buildInType),
+            /*TypeReference.BuildIn*/(buildInType),
             expression
         );
     }
@@ -191,7 +177,7 @@ public class Parser : IParser
         var closing = GuardAndEat(TokenType.RParen);
         return new FunctionCallExpression(
             fctName.Span.Append(closing.Span),
-            fctName.Identifier,//FindCallTarget(fctName.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", fctName.Identifier),
+            fctName.Identifier, //FindCallTarget(fctName.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", fctName.Identifier),
             arguments);
     }
 
@@ -210,11 +196,13 @@ public class Parser : IParser
             case TokenType.Preprocessor:
                 return ParsePreprocessor();
             case TokenType.Value:
-                return ParseValue();
+                return ParseLiteral();
             case TokenType.Fn:
                 return LoadFunctionDefinition();
+            case TokenType.True or TokenType.False:
+                return ParseLiteralExpression(_lexer.CurrentToken.Type.ToString());
             case TokenType.I32 or TokenType.I64 or TokenType.U32 or TokenType.U64 or TokenType.F32 or TokenType.F64 or TokenType.Chr or TokenType.Str or TokenType.Bit:
-                return ParseValue();
+                return ParseLiteral();
             case TokenType.Not or TokenType.Negate or TokenType.Increment or TokenType.Decrement:
                 return ParseUnary();
             case TokenType.If:
@@ -334,7 +322,7 @@ public class Parser : IParser
             var closing = GuardAndEat(TokenType.RParen);
             return new FunctionCallExpression(
                 identifier.Span.Append(closing.Span),
-                identifier.Identifier,//FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
+                identifier.Identifier, //FindCallTarget(identifier.Identifier) ?? throw new UnexpectedTokenException("Function {Name} Not Defined", identifier.Identifier),
                 arguments);
         }
         if (_lexer.CurrentToken.Type == TokenType.Assign)
@@ -390,7 +378,7 @@ public class Parser : IParser
                     Guid.NewGuid().ToString("N"),
                     false,
                     new List<ParameterDeclaration>(),
-                    new BuildInTypeReference(BuildInType.Void),
+                    /*TypeReference.BuildIn*/(TypeReference.Void),
                     true
                 );
 
@@ -555,7 +543,7 @@ public class Parser : IParser
             identifier.Identifier,
             isExtern,
             arguments,
-            new BuildInTypeReference(buildInType)
+            /*TypeReference.BuildIn*/(buildInType)
         );
         return proto;
     }
@@ -582,7 +570,10 @@ public class Parser : IParser
         {
             children.Add(ParsePrimary());
         }
-        return new RootNode(_lexer.CurrentToken.Span with { Length = _lexer.CurrentToken.Span.Position, Position = 0, },
+        return new RootNode(_lexer.CurrentToken.Span with {
+                Length = _lexer.CurrentToken.Span.Position,
+                Position = 0,
+            },
             children.Where(x => x is not null).Cast<IAstNode>().ToList());
     }
 }

@@ -1,10 +1,12 @@
-﻿namespace ajivac_lib.AST;
+﻿using ajivac_lib.AST;
+
+namespace ajivac_lib.Visitor;
 
 public interface IAstVisitor<TResult, TArg>
     where TResult : struct where TArg : struct
 {
     TResult Visit(RootNode node, ref TArg arg);
-    TResult Visit<T>(ValueExpression<T> node, ref TArg arg);
+    TResult Visit(LiteralExpression node, ref TArg arg);
     TResult Visit(IdentifierExpression node, ref TArg arg);
     TResult Visit(Prototype node, ref TArg arg);
     TResult Visit(LocalVariableDeclaration node, ref TArg arg);

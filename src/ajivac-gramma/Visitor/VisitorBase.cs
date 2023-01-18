@@ -1,16 +1,17 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using ajivac_lib.AST;
+using BinaryExpression = ajivac_lib.AST.BinaryExpression;
+using UnaryExpression = ajivac_lib.AST.UnaryExpression;
 
-namespace ajivac_lib.AST;
+namespace ajivac_lib.Visitor;
 
 public class AstVisitorBase<TResult, TArg>
     : IAstVisitor<TResult, TArg>
     where TResult : struct where TArg : struct
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private TResult VisitChildren(IAstNode? node, ref TArg arg)
+    protected virtual TResult VisitChildren(IAstNode? node, ref TArg arg)
     {
         throw new UnreachableException("Their was a call to the baseVisitor");
     }
@@ -19,7 +20,7 @@ public class AstVisitorBase<TResult, TArg>
     public virtual TResult Visit(RootNode node, ref TArg arg) => VisitChildren(node, ref arg);
 
     /// <inheritdoc />
-    public virtual TResult Visit<T>(ValueExpression<T> node, ref TArg arg) => VisitChildren(node, ref arg);
+    public virtual TResult Visit(LiteralExpression node, ref TArg arg) => VisitChildren(node, ref arg);
 
     /// <inheritdoc />
     public virtual TResult Visit(IdentifierExpression node, ref TArg arg) => VisitChildren(node, ref arg);
