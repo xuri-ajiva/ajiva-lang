@@ -18,6 +18,8 @@ public interface ILexer
 }
 public class Lexer : ILexer
 {
+    private readonly Diagnostics _diagnostics;
+
     /// <inheritdoc />
     public Token CurrentToken { get; set; }
 
@@ -141,7 +143,9 @@ public class Lexer : ILexer
             return NextTokenFromLast(TokenType.EOF);
         }
 
-        return NextTokenFromLast(TokenType.Unknown);
+        var ret = NextTokenFromLast(TokenType.Unknown);
+        _diagnostics.ReportInvalidCharacter(ret.Span);
+        return ret;
     }
 
     private readonly StringBuilder _buffer = new StringBuilder();
@@ -150,7 +154,7 @@ public class Lexer : ILexer
     private uint _lastTokenPosition;
     private bool EOF;
     private readonly TextReader _reader;
-    private readonly string _text;
+    private readonly SourceFile _file;
     private readonly Dictionary<TokenType, int> _binOpPrecedence;
 
     private char ReadNextChar()
@@ -172,7 +176,7 @@ public class Lexer : ILexer
         return (char)_reader.Peek();
     }
 
-    public Lexer(string text) : this(text,
+    public Lexer(SourceFile file, Diagnostics diagnostics) : this(file,
         //https://en.cppreference.com/w/c/language/operator_precedence
         new Dictionary<TokenType, int>() {
             [TokenType.Comma] = 10,
@@ -225,12 +229,13 @@ public class Lexer : ILexer
             [TokenType.Decrement] = 170,
         })
     {
+        _diagnostics = diagnostics;
     }
 
-    private Lexer(string text, Dictionary<TokenType, int> binOpPrecedence)
+    private Lexer(SourceFile file, Dictionary<TokenType, int> binOpPrecedence)
     {
-        _reader = new StringReader(text);
-        _text = text;
+        _reader = new StringReader(file.Text);
+        _file = file;
         _binOpPrecedence = binOpPrecedence;
     }
 
@@ -239,7 +244,8 @@ public class Lexer : ILexer
         CurrentToken = new Token(type, new SourceSpan {
             Position = _lastTokenPosition,
             Length = _currentPosition - _lastTokenPosition,
-            Source = _text
+            Source = _file.Text,
+            File = _file.Path  
         });
         _lastTokenPosition = _currentPosition;
         return CurrentToken;

@@ -2,8 +2,8 @@
 using System.Text;
 using ajivac_lib.AST;
 using ajivac_lib.ContextualAnalyzer;
+using ajivac_lib.ContextualAnalyzer.HelperStructs;
 using ajivac_lib.Semantics;
-using Void = ajivac_lib.ContextualAnalyzer.Void;
 
 namespace ajivac_lib;
 
@@ -11,27 +11,28 @@ public class Compiler
 {
     private IAstNode? _ast;
 
-    private readonly string _source;
+    private readonly SourceFile _source;
     private readonly ILexer _lexer;
     private readonly IParser _parser;
     private readonly SemanticsPass _semanticsPass;
+    private readonly Diagnostics _diagnostics;
 
-    public Compiler(string source)
+    public Compiler(SourceFile source)
     {
+        _diagnostics = Diagnostics.Console;
         _source = source;
-        _lexer = new Lexer(source);
-        _parser = new Parser(_lexer);
-        _semanticsPass = new SemanticsPass();
+        _lexer = new Lexer(source,_diagnostics);
+        _parser = new Parser(_lexer,_diagnostics);
+        _semanticsPass = new SemanticsPass(_diagnostics);
     }
 
-    public RuntimeStateHolder RuntimeState=> ((Parser)_parser).RuntimeState;
+    public RuntimeStateHolder RuntimeState => ((Parser)_parser).RuntimeState;
     public IAstNode Ast => _ast;
 
     public void PrintSource()
     {
-        Console.WriteLine(_source.Replace("\r\n", "\r\n>  "));
+        _source.Print();
     }
-
 
     public void Run()
     {
@@ -39,9 +40,8 @@ public class Compiler
         _ast = _parser.ParseAll();
         EndTime("Parse", time);
 
-        
         time = BeginTime();
-        _semanticsPass.Visit((RootNode)_ast, ref Void.Empty);
+        _semanticsPass.Visit((RootNode)_ast, ref NonRef.Empty);
         EndTime("SemanticsPass", time);
     }
 

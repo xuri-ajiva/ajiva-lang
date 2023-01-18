@@ -5,7 +5,26 @@ public struct SourceSpan
     public uint Position;
     public uint Length;
     public string Source;
-    public static SourceSpan Empty { get; } = new SourceSpan { Source = " " };
+    public string File;
+
+    public static SourceSpan Empty { get; } = new SourceSpan {
+        Source = " "
+    };
+
+    public string FullLocation()
+    {
+        //calculate line and column
+        var line = 1;
+        var iter = Source.AsSpan(0, (int)Position)
+            .EnumerateLines();
+        
+        while (iter.MoveNext())
+        {
+            line++;
+        }
+        var column = iter.Current.Length;
+        return $"{File}({line},{column})";
+    }
 
     public string GetValue()
     {

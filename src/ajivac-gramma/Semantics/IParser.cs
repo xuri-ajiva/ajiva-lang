@@ -31,10 +31,12 @@ public interface IParser
 public class Parser : IParser
 {
     private readonly ILexer _lexer;
+    private readonly Diagnostics _diagnostics;
 
-    public Parser(ILexer lexer)
+    public Parser(ILexer lexer, Diagnostics diagnostics)
     {
         _lexer = lexer;
+        _diagnostics = diagnostics;
     }
 
     public BaseNode ParseLiteral()
@@ -82,7 +84,7 @@ public class Parser : IParser
     {
         var type = _lexer.CurrentToken;
         if (!LanguageDefinition.TryGetBuildInType(type.Type, out typeReference))
-            throw new UnexpectedTokenException("Expected Type but got {Token}", _lexer.CurrentToken);
+            _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "build in type");
         _lexer.ReadNextToken(); //eat type
         return type;
     }
@@ -113,7 +115,7 @@ public class Parser : IParser
         {
             var item = parse();
             if (item == null)
-                throw new UnexpectedTokenException("Expected {Token} but got", _lexer.CurrentToken);
+                _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "comma separated list");
             res.Add(item);
             if (_lexer.CurrentToken.Type == TokenType.Comma)
                 _lexer.ReadNextToken(); //eat comma
@@ -143,11 +145,9 @@ public class Parser : IParser
     private void GuardCurrentToken(TokenType expect)
     {
         if (_lexer.CurrentToken.Type == expect) return;
-        ThrowUnexpected(expect);
+        _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, expect.ToString());
+        //throw new UnexpectedTokenException($"Expected {expect} but got {_lexer.CurrentToken.Type}", _lexer.CurrentToken);
     }
-
-    [DoesNotReturn]
-    private T ThrowUnexpected<T>(T expect) => throw new UnexpectedTokenException($"Expected {expect} but got {_lexer.CurrentToken.Type}", _lexer.CurrentToken);
 
     private Prototype? FindCallTarget(string calleeName)
     {
@@ -224,10 +224,9 @@ public class Parser : IParser
             case TokenType.Semicolon:
                 return ParseEmptyStatement();
             default:
-                throw new($"Unexpected token {_lexer.CurrentToken}");
+                _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "primary expression");
                 _lexer.ReadNextToken(); // eat token
                 return null;
-            //ThrowUnexpected(TokenType.Unknown);
         }
     }
 
@@ -288,7 +287,7 @@ public class Parser : IParser
 
     private IAstNode LoadNativeDefinition()
     {
-        var native = GuardAndEat(TokenType.Native);
+        GuardAndEat(TokenType.Native);
         var prototype = ParsePrototype(true);
         RuntimeState.NativeFunctionDeclarations.Add(prototype);
         return prototype;
@@ -308,7 +307,7 @@ public class Parser : IParser
         _lexer.ReadNextToken(); //eat operator
         var operand = ParseExpression();
         if (operand is null)
-            throw new UnexpectedTokenException("Expected operand but got {Token}", _lexer.CurrentToken);
+            _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "expression operand");
         return new UnaryExpression(op.Span.Append(operand.Span), GetUnOp(op.Type), operand);
     }
 
@@ -366,6 +365,7 @@ public class Parser : IParser
         var identifier = _lexer.LastIdentifier;
         var idToken = GuardAndEat(TokenType.Identifier);
 
+        //todo handle by external preprocessor
         switch (identifier)
         {
             case "pure":
@@ -390,7 +390,8 @@ public class Parser : IParser
                 RuntimeState.FunctionDefinitions.Add(functionDefinition);
                 return functionDefinition;
             default:
-                throw new UndefinedPreprocessorException(identifier);
+                _diagnostics.ReportUndefinedPreprocessor(identifier, preprocessor.Span);
+                return new EmptyStatement(preprocessor.Span);
         }
     }
 
@@ -475,41 +476,72 @@ public class Parser : IParser
 
     private BinaryOperator GetBinOp(TokenType tokenType)
     {
-        return tokenType switch {
-            TokenType.Assign => BinaryOperator.Assign,
-            TokenType.And => BinaryOperator.And,
-            TokenType.Or => BinaryOperator.Or,
-            TokenType.Xor => BinaryOperator.Xor,
-            TokenType.Plus => BinaryOperator.Plus,
-            TokenType.Minus => BinaryOperator.Minus,
-            TokenType.Star => BinaryOperator.Multiply,
-            TokenType.Slash => BinaryOperator.Divide,
-            TokenType.Percent => BinaryOperator.Modulo,
-            TokenType.DoubleEquals => BinaryOperator.Equal,
-            TokenType.NotEqual => BinaryOperator.NotEqual,
-            TokenType.Greater => BinaryOperator.Greater,
-            TokenType.GreaterEqual => BinaryOperator.GreaterEqual,
-            TokenType.Less => BinaryOperator.Less,
-            TokenType.LessEqual => BinaryOperator.LessEqual,
-            TokenType.ShiftLeft => BinaryOperator.ShiftLeft,
-            TokenType.ShiftRight => BinaryOperator.ShiftRight,
-            TokenType.Question => BinaryOperator.Question,
-            TokenType.Colon => BinaryOperator.Colon,
-            _ => throw new UnexpectedTokenException("Expected binary operator but got {Token}", _lexer.CurrentToken)
-        };
+        switch (tokenType)
+        {
+            case TokenType.Assign:
+                return BinaryOperator.Assign;
+            case TokenType.And:
+                return BinaryOperator.And;
+            case TokenType.Or:
+                return BinaryOperator.Or;
+            case TokenType.Xor:
+                return BinaryOperator.Xor;
+            case TokenType.Plus:
+                return BinaryOperator.Plus;
+            case TokenType.Minus:
+                return BinaryOperator.Minus;
+            case TokenType.Star:
+                return BinaryOperator.Multiply;
+            case TokenType.Slash:
+                return BinaryOperator.Divide;
+            case TokenType.Percent:
+                return BinaryOperator.Modulo;
+            case TokenType.DoubleEquals:
+                return BinaryOperator.Equal;
+            case TokenType.NotEqual:
+                return BinaryOperator.NotEqual;
+            case TokenType.Greater:
+                return BinaryOperator.Greater;
+            case TokenType.GreaterEqual:
+                return BinaryOperator.GreaterEqual;
+            case TokenType.Less:
+                return BinaryOperator.Less;
+            case TokenType.LessEqual:
+                return BinaryOperator.LessEqual;
+            case TokenType.ShiftLeft:
+                return BinaryOperator.ShiftLeft;
+            case TokenType.ShiftRight:
+                return BinaryOperator.ShiftRight;
+            case TokenType.Question:
+                return BinaryOperator.Question;
+            case TokenType.Colon:
+                return BinaryOperator.Colon;
+            default:
+                _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "binary operator");
+                throw new Exception();
+        }
     }
 
     private UnaryOperator GetUnOp(TokenType tokenType)
     {
-        return tokenType switch {
-            TokenType.Not => UnaryOperator.Not,
-            TokenType.Negate => UnaryOperator.Negate,
-            TokenType.Minus => UnaryOperator.Negative,
-            TokenType.Plus => UnaryOperator.Positive,
-            TokenType.Increment => UnaryOperator.Increment,
-            TokenType.Decrement => UnaryOperator.Decrement,
-            _ => throw new UnexpectedTokenException("Expected binary operator but got {Token}", _lexer.CurrentToken)
-        };
+        switch (tokenType)
+        {
+            case TokenType.Not:
+                return UnaryOperator.Not;
+            case TokenType.Negate:
+                return UnaryOperator.Negate;
+            case TokenType.Minus:
+                return UnaryOperator.Negative;
+            case TokenType.Plus:
+                return UnaryOperator.Positive;
+            case TokenType.Increment:
+                return UnaryOperator.Increment;
+            case TokenType.Decrement:
+                return UnaryOperator.Decrement;
+            default:
+                _diagnostics.ReportUnexpectedToken(_lexer.CurrentToken, "unary operator");
+                throw new Exception();
+        }
     }
 
     public BaseNode LoadFunctionDefinition()
@@ -517,7 +549,7 @@ public class Parser : IParser
         var fn = GuardAndEat(TokenType.Fn);
         var proto = ParsePrototype(false);
         var def = new FunctionDefinition(
-            proto.Span.Append(_lexer.CurrentToken.Span),
+            fn.Span.Append(_lexer.CurrentToken.Span),
             proto
         );
         RuntimeState.FunctionDefinitions.Add(def);
@@ -581,23 +613,4 @@ public class RuntimeStateHolder
 {
     public List<Prototype> NativeFunctionDeclarations { get; set; } = new();
     public List<FunctionDefinition> FunctionDefinitions { get; set; } = new();
-}
-internal class UndefinedPreprocessorException : Exception
-{
-    public UndefinedPreprocessorException(string identifier) : base("Undefined preprocessor: " + identifier)
-    {
-    }
-}
-public class UnexpectedTokenException : Exception
-{
-    public Token Token { get; }
-
-    public UnexpectedTokenException(string template, Token token) : base(string.Format(template, token.Type))
-    {
-        Token = token;
-    }
-
-    public UnexpectedTokenException(string template, params object[] args) : base(string.Format(template, args))
-    {
-    }
 }
