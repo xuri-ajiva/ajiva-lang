@@ -1,12 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using ajivac_lib.AST;
 
-namespace ajivac_lib.ContextualAnalyzer;
+namespace ajivac_lib.ContextualAnalyzer.HelperStructs;
 
 public class IdentificationTable
 {
-    public IdentificationTable()
+    private readonly Diagnostics _diagnostics;
+
+    public IdentificationTable(Diagnostics diagnostics)
     {
+        _diagnostics = diagnostics;
     }
     
     private readonly Stack<InternScopeFrame> stack = new();
@@ -31,8 +34,13 @@ public class IdentificationTable
         var stackFrame = stack.Peek();
         //check if variable is already declared
         if (stackFrame.Variables.ContainsKey(variable.Name))
-            throw new SyntaxError($"Variable {variable.Name} is already declared in this scope", variable);
-        stackFrame.Variables.Add(variable.Name, variable);
+        {
+            _diagnostics.ReportVariableAlreadyDeclared(variable.Span, variable.Name);
+        }
+        else
+        {
+            stackFrame.Variables.Add(variable.Name, variable);
+        }
     }
     
     public bool TryGetVariable(string name,[NotNullWhen(true)] out LocalVariableDeclaration? variable)
