@@ -63,6 +63,8 @@ public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNod
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+
+    public LocalVariableDeclaration? Definition { get; set; }
 }
 public record LocalVariableDeclaration(SourceSpan Span, string Name, TypeReference TypeReference, IExpression? Initializer, bool IsCompilerGenerated = false)
     : BaseNode(Span), IVariableDeclaration
@@ -128,6 +130,8 @@ public record AssignmentExpression(SourceSpan Span, string Name, IExpression? As
             if (AssignmentValue != null) yield return AssignmentValue;
         }
     }
+    
+    public LocalVariableDeclaration? Definition { get; set; }
 }
 public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyList<ParameterDeclaration> Parameters, TypeReference ReturnType, bool IsCompilerGenerated = false) : BaseNode(Span)
 {
@@ -165,8 +169,8 @@ public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IE
     {
         get
         {
+            //todo yield return Callee;
             yield break;
-            //yield return Callee;
         }
     }
 
@@ -180,6 +184,8 @@ public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IE
         PrintList(builder, nameof(Arguments), Arguments);
         return true;
     }
+
+    public FunctionDefinition? Definition { get; set; }
 }
 public record FunctionDefinition(SourceSpan Span, Prototype Signature, bool IsAnonymous = false) : BaseNode(Span)
 {
@@ -246,7 +252,7 @@ public record IfExpression(
         {
             yield return Condition;
             yield return ThenExpression;
-            yield return ElseExpression;
+            if (ElseExpression is not null) yield return ElseExpression;
         }
     }
 }
@@ -256,7 +262,7 @@ public record ReturnStatement(SourceSpan Span, IExpression? Expression) : BaseNo
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
-    public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
+    public override IEnumerable<IAstNode> Children { get { if (Expression != null) yield return Expression; } }
 }
 public record WhileStatement(SourceSpan Span, IExpression Condition, IAstNode Body) : BaseNode(Span)
 {
