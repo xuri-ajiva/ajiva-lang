@@ -2,12 +2,14 @@
 using System.Text;
 using System.Threading.Channels;
 using ajivac_lib;
+using ajivac_lib.Semantics;
 using ajivac_llvm;
 
 Console.WriteLine("Ajiva Compiler");
 
 const string src = @"
 native void System.Console.WriteLine(i32 s)
+native void System.Console.Write(str s)
 native void Log(i32 s)
 fn i32 fac(i32 n) {
     if (n == 0) 
@@ -19,7 +21,7 @@ fn i32 fac(i32 n) {
 @entry 
 #pure {*
 System.Console.Write(""fac(10) = "");
-System.Console.WriteLine(fac(10))
+System.Console.WriteLine(fac(10));
 i32 a = 10 
 if ( !(a == 20) ) {
     a = 10 + 2 a = 3
@@ -79,24 +81,49 @@ fn void fizzbuzz(i32 n) {
 }
 ";
 
-const string selected = src;
-ILexer lexer = new Lexer(selected.Replace("\r\n", "  "));
+const string Simple = @"
+@entry(10)
+fn i32 printn(i32 n) {
+    if(!true) {
+        return n
+    }
+    if(true) {
+        return 20.3
+    }
+    else if(1) {
+        return 'a'
+    }
+    printn(""Hello World"")
+}
+";
 
-Console.WriteLine(selected.Replace("\r\n", "\r\n>  "));
-var parser = new Parser(lexer);
-var time = BeginTime();
-var ast = parser.ParseAll();
-EndTime("Parse", time);
-//Console.WriteLine(MakeIndentation(ast));
+var compiler = new Compiler(new SourceFile(fisBuzz, "File.aj"));
+compiler.PrintSource();
+compiler.Run();
+//compiler.PrintTree();
 
 var interpreter = new Interpreter(s => Debug.WriteLine(s));
-time = BeginTime();
-interpreter.Load(parser.RuntimeState);
+var time = BeginTime();
+interpreter.Load(compiler.RuntimeState);
 EndTime("Interpreter.Load", time);
 
 time = BeginTime();
-interpreter.Run(ast);
+interpreter.Run(compiler.Ast);
 EndTime("Interpreter.Run", time);
+
+/*var compiler = new Compiler();
+time = BeginTime();
+var module = compiler.Compile(ast);
+EndTime("Compiler.Compile", time);
+
+time = BeginTime();
+var runtime = new Runtime();
+runtime.Load(module);
+EndTime("Runtime.Load", time);
+
+time = BeginTime();
+runtime.Run();
+EndTime("Runtime.Run", time);*/
 
 string MakeIndentation(object? value)
 {

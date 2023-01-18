@@ -2,6 +2,7 @@
 using System.Text;
 using ajivac_lib;
 using ajivac_lib.AST;
+using ajivac_lib.Semantics;
 
 namespace ajivac_llvm;
 
@@ -113,7 +114,7 @@ public class FunctionResolver
             else sb.Append(',');
             sb.Append(param.Name);
             sb.Append(':');
-            sb.Append(param.TypeReference.Identifier);
+            sb.Append(param.TypeReference.ToString());
         }
         sb.Append(']');
         return sb.ToString();
@@ -159,11 +160,11 @@ public class FunctionResolver
                 new ParameterDeclaration(SourceSpan.Empty,
                     i,
                     x.GetType().Name,
-                    new BuildInTypeReference(NativeResolver.NativeResolve(x.GetType())),
+                    /*TypeReference.BuildIn*/(NativeResolver.NativeResolve(x.GetType())),
                     null,
                     true)
             ).ToArray(),
-            new BuildInTypeReference(BuildInType.Void),
+            /*TypeReference.BuildIn*/(TypeReference.Void),
             true);
         LoadExtern(proto);
         return proto;

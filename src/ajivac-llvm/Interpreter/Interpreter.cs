@@ -2,6 +2,7 @@
 using System.Reflection;
 using ajivac_lib;
 using ajivac_lib.AST;
+using ajivac_lib.Semantics;
 
 namespace ajivac_llvm;
 
@@ -39,7 +40,9 @@ public class Interpreter
                     var ret = CallFunction(fd.Signature, attributeEaSt.Arguments ?? new List<IExpression>());
                     if (ret is not null)
                     {
-                        Console.WriteLine("TLF: " + ret);
+                        Console.WriteLine("Top Level Function " + fd.Signature.Name + "("+
+                                          attributeEaSt.Arguments?.Select(x => x.Span.GetValue()).Aggregate((x, y) => x + ", " + y) 
+                                          + ") returned:\n" + ret);
                     }
                     return null;
                 }
@@ -67,11 +70,7 @@ public class Interpreter
                         ? ifExpression.ThenExpression
                         : ifExpression.ElseExpression));
                 }
-            case IExpression expression:
-                var value = EvaluateExpression(expression);
-                if (value is not null)
-                    logger($"Value discarding: ({expression.Span}) {value}");
-                return null;
+
             case BreakStatement:
             case ContinueStatement:
             case ReturnStatement:
@@ -134,6 +133,11 @@ public class Interpreter
             case null:
             case EmptyStatement:
                 return null;
+            case IExpression expression:
+                var value = EvaluateExpression(expression);
+                if (value is not null)
+                    logger($"Value discarding: ({expression.Span}) {value}");
+                return null;
             default:
                 throw new NotImplementedException(node.ToString());
         }
@@ -153,7 +157,9 @@ public class Interpreter
             var value = arguments?[index];
             parameters[prototype.Parameters[index].Name] = value;
         }
-        _stackManager.Push(new StackManager.InternStackFrame { Variables = parameters });
+        _stackManager.Push(new StackManager.InternStackFrame {
+            Variables = parameters
+        });
         var statement = Evaluate(func.Body);
         if (IsControlFlow(statement))
         {
@@ -172,7 +178,7 @@ public class Interpreter
                     throw new NotImplementedException();
             }
         }
-        if (statement is null && func.Signature.ReturnType is BuildInTypeReference { Type: BuildInType.Void })
+        if (statement is null && func.Signature.ReturnType.Kind is TypeKind.Void)
         {
             return null;
         }
@@ -192,24 +198,21 @@ public class Interpreter
         {
             case UnaryExpression or BinaryExpression:
                 return EvaluateBinUnary(node);
-            case ValueExpression<int> i32:
-                return i32.Value;
-            case ValueExpression<long> i64:
-                return i64.Value;
-            case ValueExpression<uint> u32:
-                return u32.Value;
-            case ValueExpression<ulong> u64:
-                return u64.Value;
-            case ValueExpression<float> f32:
-                return f32.Value;
-            case ValueExpression<double> f64:
-                return f64.Value;
-            case ValueExpression<bool> bit:
-                return bit.Value;
-            case ValueExpression<string> str:
-                return str.Value;
-            case ValueExpression<char> chr:
-                return chr.Value;
+            case LiteralExpression literalExpression:
+                return literalExpression.TypeReference.Kind switch {
+                    TypeKind.I32 => int.Parse(literalExpression.Value),
+                    TypeKind.I64 => long.Parse(literalExpression.Value),
+                    TypeKind.U32 => uint.Parse(literalExpression.Value),
+                    TypeKind.U64 => ulong.Parse(literalExpression.Value),
+                    TypeKind.F32 => float.Parse(literalExpression.Value),
+                    TypeKind.F64 => double.Parse(literalExpression.Value),
+                    TypeKind.Chr => char.Parse(literalExpression.Value),
+                    TypeKind.Str => literalExpression.Value,
+                    TypeKind.Bit => bool.Parse(literalExpression.Value),
+                    TypeKind.Void => null,
+                    TypeKind.Unknown => throw new Exception("Unknown type"),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             case FunctionCallExpression functionCallExpression:
                 return CallFunction(functionCallExpression.CalleeName, functionCallExpression.Arguments);
             case IdentifierExpression variableExpression:
