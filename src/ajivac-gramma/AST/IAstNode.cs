@@ -20,3 +20,8 @@ public interface IVariableDeclaration : IAstNode
 public interface IExpression : IAstNode
 {
 }
+
+public interface ITypedExpression : IExpression
+{
+    TypeReference TypeReference { get;  }
+}

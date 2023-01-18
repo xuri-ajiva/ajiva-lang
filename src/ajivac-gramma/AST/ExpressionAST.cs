@@ -48,7 +48,7 @@ public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode
         return PrintList(builder, nameof(Children), Children);
     }
 }
-public record LiteralExpression(SourceSpan Span, string Value, TypeReference ValueTypeReference) : BaseNode(Span), IExpression
+public record LiteralExpression(SourceSpan Span, string Value, TypeReference TypeReference) : BaseNode(Span), IExpression, ITypedExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -56,7 +56,7 @@ public record LiteralExpression(SourceSpan Span, string Value, TypeReference Val
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
-public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNode(Span), IExpression
+public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNode(Span), IExpression, ITypedExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -65,9 +65,10 @@ public record IdentifierExpression(SourceSpan Span, string Identifier) : BaseNod
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 
     public LocalVariableDeclaration? Definition { get; set; }
+    public TypeReference TypeReference => Definition!.TypeReference;
 }
 public record LocalVariableDeclaration(SourceSpan Span, string Name, TypeReference TypeReference, IExpression? Initializer, bool IsCompilerGenerated = false)
-    : BaseNode(Span), IVariableDeclaration
+    : BaseNode(Span), IVariableDeclaration, ITypedExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -84,7 +85,7 @@ public record LocalVariableDeclaration(SourceSpan Span, string Name, TypeReferen
         }
     }
 }
-public record BinaryExpression(SourceSpan Span, BinaryOperator Operator, IExpression Left, IExpression Right) : BaseNode(Span), IExpression
+public record BinaryExpression(SourceSpan Span, BinaryOperator Operator, IExpression Left, IExpression Right) : BaseNode(Span), ITypedExpression, IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -98,8 +99,9 @@ public record BinaryExpression(SourceSpan Span, BinaryOperator Operator, IExpres
             yield return Right;
         }
     }
+    public TypeReference TypeReference { get; set; }
 }
-public record UnaryExpression(SourceSpan Span, UnaryOperator Operator, IExpression Operand) : BaseNode(Span), IExpression
+public record UnaryExpression(SourceSpan Span, UnaryOperator Operator, IExpression Operand) : BaseNode(Span), ITypedExpression, IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -109,16 +111,17 @@ public record UnaryExpression(SourceSpan Span, UnaryOperator Operator, IExpressi
     {
         get { yield return Operand; }
     }
+    public TypeReference TypeReference { get; set; }
 }
 public record ParameterDeclaration(SourceSpan Span, int Index, string Name, TypeReference TypeReference, IExpression? Initializer, bool IsCompilerGenerated = false)
-    : LocalVariableDeclaration(Span, Name, TypeReference, Initializer, IsCompilerGenerated)
+    : LocalVariableDeclaration(Span, Name, TypeReference, Initializer, IsCompilerGenerated), ITypedExpression
 {
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
     public override IEnumerable<IAstNode> Children => Enumerable.Empty<IAstNode>();
 }
-public record AssignmentExpression(SourceSpan Span, string Name, IExpression? AssignmentValue) : BaseNode(Span), IExpression
+public record AssignmentExpression(SourceSpan Span, string Name, IExpression? AssignmentValue) : BaseNode(Span), IExpression //todo dose assing return th value?, ITypedExpression
 {
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
@@ -130,10 +133,10 @@ public record AssignmentExpression(SourceSpan Span, string Name, IExpression? As
             if (AssignmentValue != null) yield return AssignmentValue;
         }
     }
-    
+
     public LocalVariableDeclaration? Definition { get; set; }
 }
-public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyList<ParameterDeclaration> Parameters, TypeReference ReturnType, bool IsCompilerGenerated = false) : BaseNode(Span)
+public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyList<ParameterDeclaration> Parameters, TypeReference ReturnType, bool IsCompilerGenerated = false) : BaseNode(Span), ITypedExpression
 {
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
@@ -158,8 +161,10 @@ public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyLi
         builder.Append(ReturnType);
         return true;
     }
+
+    public TypeReference TypeReference => ReturnType;
 }
-public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IExpression> Arguments) : BaseNode(Span), IExpression
+public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IExpression> Arguments) : BaseNode(Span), ITypedExpression, IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -186,8 +191,9 @@ public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IE
     }
 
     public FunctionDefinition? Definition { get; set; }
+    public TypeReference TypeReference => Definition!.TypeReference;
 }
-public record FunctionDefinition(SourceSpan Span, Prototype Signature, bool IsAnonymous = false) : BaseNode(Span)
+public record FunctionDefinition(SourceSpan Span, Prototype Signature, bool IsAnonymous = false) : BaseNode(Span), ITypedExpression
 {
     public FunctionDefinition(SourceSpan span, Prototype signature, IAstNode body, bool isAnonymous = false) : this(span, signature, isAnonymous)
     {
@@ -211,6 +217,7 @@ public record FunctionDefinition(SourceSpan Span, Prototype Signature, bool IsAn
     public IReadOnlyList<ParameterDeclaration> Parameters => Signature.Parameters;
 
     public IReadOnlyList<LocalVariableDeclaration> LocalVariables { get; }
+    public TypeReference TypeReference => Signature.TypeReference;
 }
 public record AttributeEaSt(SourceSpan Span, string Name, IAstNode? Operand, IReadOnlyList<IExpression>? Arguments) : BaseNode(Span)
 {
@@ -256,13 +263,33 @@ public record IfExpression(
         }
     }
 }
-public record ReturnStatement(SourceSpan Span, IExpression? Expression) : BaseNode(Span)
+public record ReturnStatement(SourceSpan Span, IExpression? Expression) : BaseNode(Span), ITypedExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
-    public override IEnumerable<IAstNode> Children { get { if (Expression != null) yield return Expression; } }
+    public override IEnumerable<IAstNode> Children
+    {
+        get
+        {
+            if (Expression != null) yield return Expression;
+        }
+    }
+    public TypeReference TypeReference { get; set; }
+
+    public FunctionDefinition Function { get; set; }
+
+    protected override bool PrintMembers(StringBuilder builder)
+    {
+        if (base.PrintMembers(builder))
+            builder.Append(", ");
+        builder.Append("Expression = ");
+        builder.Append((object)this.Expression);
+        builder.Append(", TypeReference = ");
+        builder.Append(TypeReference.ToString());
+        return true;
+    }
 }
 public record WhileStatement(SourceSpan Span, IExpression Condition, IAstNode Body) : BaseNode(Span)
 {
