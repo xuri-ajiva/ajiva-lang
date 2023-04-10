@@ -1,193 +1,139 @@
-﻿using System.Diagnostics;
-using System.Text;
-using System.Threading.Channels;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using ajivac_il;
 using ajivac_lib;
+using ajivac_lib.AST;
 using ajivac_lib.Semantics;
 using ajivac_llvm;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using Spectre.Console.Rendering;
 
-Console.WriteLine("Ajiva Compiler");
+AnsiConsole.Write(new FigletText("Ajiva Compiler").Color(Color.Blue));
+var app = new CommandApp<AjivaCompiler>();
+return app.Run(args);
 
-const string src = @"
-native void System.Console.WriteLine(i32 s)
-native void System.Console.Write(str s)
-native void Log(i32 s)
-fn i32 fac(i32 n) {
-    if (n == 0) 
-        return 1
-    else {
-        return n * fac(n - 1)
-    }
-}
-@entry 
-#pure {*
-System.Console.Write(""fac(10) = "");
-System.Console.WriteLine(fac(10));
-i32 a = 10 
-if ( !(a == 20) ) {
-    a = 10 + 2 a = 3
-} 
-else
+internal sealed class AjivaCompiler : Command<AjivaCompiler.Settings>
 {
-    a = a * 100 + 2 + fac(5)
-}
-for (i32 i = 0 i < 10 i = i + 1) {
-    a = a + 1
-    Log(i)
-}
-a = 0
-while (a < 100) {
-    a = a + 1
-    if(a < 5) {
-        System.Console.WriteLine(""Continue"")
-        continue
-        System.Console.WriteLine(""FAIL"")
-    }
-    Log(a)
-    if (a == 10) {        
-        System.Console.WriteLine(""Break"")
-        break
-    }
-}
-System.Console.WriteLine(a)
-";
-const string src2 = @"
-@entry(10)
-fn i32 fac(i32 n) {
-    if (n == 0) 
-        return 1
-    else {
-        return n * fac(n - 1)
-    }
-}
-";
-const string fisBuzz = @"
-native void Log(i32 i)
-native void Log(str s)
-@entry(100)
-fn void fizzbuzz(i32 n) {
-    for (i32 i = 0 i < n i = i + 1) {
-        if ((i % 3) == 0) {
-            if ((i % 5) == 0) {
-                Log(""FizzBuzz"")
-            } else {
-                Log(""Fizz"")
-            }
-        } else if ((i % 5) == 0) {
-            Log(""Buzz"")
-        } else {
-            Log(i)
-        }
-    }
-}
-";
-
-const string Simple = @"
-@entry(10)
-fn i32 printn(i32 n) {
-    if(!true) {
-        return n
-    }
-    if(true) {
-        return 20.3
-    }
-    else if(1) {
-        return 'a'
-    }
-    printn(""Hello World"")
-}
-";
-
-var compiler = new Compiler(new SourceFile(fisBuzz, "File.aj"));
-compiler.PrintSource();
-compiler.Run();
-//compiler.PrintTree();
-
-var interpreter = new Interpreter(s => Debug.WriteLine(s));
-var time = BeginTime();
-interpreter.Load(compiler.RuntimeState);
-EndTime("Interpreter.Load", time);
-
-time = BeginTime();
-interpreter.Run(compiler.Ast);
-EndTime("Interpreter.Run", time);
-
-/*var compiler = new Compiler();
-time = BeginTime();
-var module = compiler.Compile(ast);
-EndTime("Compiler.Compile", time);
-
-time = BeginTime();
-var runtime = new Runtime();
-runtime.Load(module);
-EndTime("Runtime.Load", time);
-
-time = BeginTime();
-runtime.Run();
-EndTime("Runtime.Run", time);*/
-
-string MakeIndentation(object? value)
-{
-    if (value is null)
+    public sealed class Settings : CommandSettings
     {
-        return "Null";
+        [Description("Path to the file to compile")]
+        [CommandArgument(0, "[file.aj]")]
+        public string InPath { get; init; }
+
+        [Description("Path where to save the compiled file")]
+        [CommandOption("-o|--out <file>")]
+        public string? OutPath { get; init; }
+
+        [Description("Print the Source")]
+        [CommandOption("-s|--print-source")]
+        [DefaultValue(false)]
+        public bool PrintSource { get; set; }
+
+        [Description("Print the AST")]
+        [CommandOption("-t|--print-tree")]
+        [DefaultValue(false)]
+        public bool PrintTree { get; set; }
+
+        [Description("Run the Program")]
+        [CommandOption("-r|--run")]
+        [DefaultValue(false)]
+        public bool Run { get; set; }
     }
 
-    string str = value.ToString()!;
-
-    var buffer = new StringBuilder();
-    var indentation = 0;
-    bool indented = true;
-    var openStrings = false;
-
-    void Indent()
+    public override int Execute(CommandContext context, Settings settings)
     {
-        for (int j = 0; j < indentation; j++)
-            buffer.Append("|   ");
-        indented = true;
-    }
-
-    foreach (var t in str)
-    {
-        switch (t)
-        {
-            case '{' or '[' or '(' when !openStrings:
-                indentation++;
-                buffer.Append(t);
-                buffer.AppendLine();
-                Indent();
-                break;
-            case '}' or ']' or ')' when !openStrings && indentation > 0:
-                indentation--;
-                buffer.AppendLine();
-                Indent();
-                buffer.Append(t);
-                break;
-            case '\'' or '"':
-                buffer.Append(t);
-                openStrings = !openStrings;
-                break;
-            case ',':
-                buffer.AppendLine(",");
-                Indent();
-                break;
-            default:
+        var source = new SourceFile(File.ReadAllText(settings.InPath), settings.InPath);
+        var name = Path.GetFileNameWithoutExtension(settings.InPath);
+        var compiler = new Compiler(source, new SpectreDiagnostics());
+        if (settings.PrintSource)
+            AnsiConsole.Write(new Panel(new Text(source.Text).Fold())
+                .Header("Source"));
+        AnsiConsole.Status().AutoRefresh(true)
+            .Spinner(Spinner.Known.Dots).Start("Compiling..."
+                , ctx =>
                 {
-                    if (!indented || t != ' ')
-                    {
-                        buffer.Append(t);
-                        indented = false;
-                    }
-                    break;
-                }
+                    AnsiConsole.MarkupLine($"[green]Compiling {name}[/]");
+                    ctx.Status("Parsing...");
+                    compiler.ParseAll();
+                    AnsiConsole.MarkupLine($"[green]Parsing Done[/]");
+                    ctx.Status("Semantic Analysis...");
+                    compiler.Analyze();
+                    AnsiConsole.MarkupLine($"[green]Semantic Analysis Done[/]");
+                });
+
+        if (settings.PrintTree)
+        {
+            AnsiConsole.MarkupLine("[green]AST[/]");
+            PrintTree(compiler.Ast);
         }
+        var interpreter = new Interpreter(s => Debug.WriteLine(s));
+        interpreter.Load(compiler.RuntimeState);
+        var ilGenerator = new ILCodeGenerator(name, interpreter);
+        ilGenerator.Visit((RootNode)compiler.Ast);
+        ilGenerator.Finish();
+        if (settings.Run)
+        {
+            AnsiConsole.MarkupLine($"[green]Running[/] {name}");
+            try
+            {
+                ilGenerator.Run();
+            }
+            catch (Exception e)
+            {
+                AnsiConsole.WriteException(e);
+            }
+            finally
+            {
+                AnsiConsole.MarkupLine($"[green]Finished[/] {name}");
+            }
+        }
+        if (settings.OutPath is not null)
+        {
+            var save = Path.GetFullPath(settings.OutPath);
+            AnsiConsole.MarkupLine($"[green]Saving[/] {name} to {save}");
+            ilGenerator.Save(save);
+        }
+        AnsiConsole.MarkupLine($"[green]Compiled[/] {name}");
+        return 0;
     }
-    return buffer.ToString();
+
+    private void PrintTree(IAstNode compilerAst)
+    {
+        var root = compilerAst.ToTree().First();
+        AnsiConsole.Write(root);
+    }
 }
-
-long BeginTime() => DateTime.Now.Ticks;
-
-void EndTime(string name, long start)
+internal class SpectreDiagnostics : Diagnostics
 {
-    var end = DateTime.Now.Ticks;
-    Console.WriteLine($"{name} took {(end - start) / 10000}ms");
+    public SpectreDiagnostics() : base(null, Sensitivity.Info)
+    {
+    }
+
+    public override void ReportError(SourceSpan location, string message, Sensitivity sensitivity)
+    {
+        const int max = 10;
+        AnsiConsole.MarkupLine($"[red]{sensitivity}[/]: {location.FullLocation()}");
+        AnsiConsole.WriteLine(Extent(location, max));
+        AnsiConsole.WriteLine($"{"",(max - 2)}~~^~~ {message}");
+    }
+
+    private string Extent(SourceSpan location, int max)
+    {
+        return (location with {
+            Position = (uint)Math.Max(0, location.Position - max),
+            Length = (uint)Math.Min(location.Length + max * 2, location.Source.Length - location.Position)
+        }).GetValue();
+    }
+}
+public static class Ext
+{
+    public static IEnumerable<Tree> ToTree(this IAstNode node)
+    {
+        var tree = new Tree(node.GetType().ToString());
+        foreach (var child in node.Children)
+            tree.AddNodes(child.ToTree());
+        yield return tree;
+    }
 }

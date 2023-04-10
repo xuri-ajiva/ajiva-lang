@@ -9,11 +9,13 @@
     </PropertyGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\ajivac-il\ajivac-il.csproj" />
+      <ProjectReference Include="..\ajivac-interpreter\ajivac-interpreter.csproj" />
       <ProjectReference Include="..\ajivac-gramma\ajivac-gramma.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-      <PackageReference Include="Llvm.NET" Version="8.0.1" />
-      <PackageReference Include="Lokad.ILPack" Version="0.2.0" />
+      <PackageReference Include="Spectre.Console" Version="0.46.0" />
+      <PackageReference Include="Spectre.Console.Cli" Version="0.46.0" />
     </ItemGroup>
 </Project>
