@@ -192,7 +192,7 @@ public class Interpreter
         return method.Invoke(null, arguments);
     }
 
-    private object? EvaluateExpression(IExpression? node)
+    public object? EvaluateExpression(IExpression? node)
     {
         switch (node)
         {
