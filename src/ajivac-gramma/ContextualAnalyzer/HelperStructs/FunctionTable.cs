@@ -32,15 +32,20 @@ public class FunctionTable
 
     public bool TryGetFunction(string name, IEnumerable<TypeReference> argTypes, TypeReference? returnType, [NotNullWhen(true)] out FunctionDefinition? function)
     {
-        return functions.TryGetValue(name, out var definitions) 
-            ? FindFunction(argTypes, returnType, out function, definitions) 
-            : TryGetNative(name, argTypes, returnType, out function);
+        if (functions.TryGetValue(name, out var definitions))
+        {
+            if (FindFunction(argTypes, returnType, out function, definitions))
+                return true; // found defined function
+            //check if native exists
+        }
+        return TryGetNative(name, argTypes, returnType, out function);
     }
 
     private bool TryGetNative(string name, IEnumerable<TypeReference> argTypes, TypeReference? returnType, out FunctionDefinition? function)
     {
         if (natives.TryGetValue(name, out var definitions))
-            return FindFunction(argTypes, returnType, out function, definitions);
+            if (FindFunction(argTypes, returnType, out function, definitions))
+                return true; // found defined function
 
         //check if native exists
         try
@@ -48,13 +53,17 @@ public class FunctionTable
             var resolve = NativeResolver.SResolve(name, argTypes.Select(x => NativeResolver.ResolveNative(x)).ToArray(), returnType);
 
             var args = resolve.GetParameters().Select((x, i) => new ParameterDeclaration(SourceSpan.Empty, i, x.Name, NativeResolver.NativeResolve(x.ParameterType),
-                x.DefaultValue is not null
+                x.HasDefaultValue
                     ? new LiteralExpression(SourceSpan.Empty, x.DefaultValue.ToString(), NativeResolver.NativeResolve(x.DefaultValue.GetType()))
                     : null)).ToArray();
 
             function = new FunctionDefinition(SourceSpan.Empty,
                 new Prototype(SourceSpan.Empty, resolve.Name, true, args, NativeResolver.NativeResolve(resolve.ReturnType), true),
                 new RootNode(SourceSpan.Empty, ArraySegment<IAstNode>.Empty));
+            natives.Add(name, new List<FunctionDefinition> {
+                function
+            });
+            
             return true;
         }
         catch (Exception e)
