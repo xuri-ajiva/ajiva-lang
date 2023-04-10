@@ -11,13 +11,15 @@ public class Diagnostics
         MinSensitivity = minSensitivity;
     }
 
+    public int Count { get; private set; }
     public Action<String> Writer { get; }
     public Sensitivity MinSensitivity { get; }
 
-    public void ReportError(SourceSpan location, string message, Sensitivity sensitivity)
+    public virtual void ReportError(SourceSpan location, string message, Sensitivity sensitivity)
     {
         if (sensitivity >= MinSensitivity)
         {
+            Count++;
             Writer?.Invoke($"[{sensitivity}] {location.FullLocation()}: {message}");
         }
     }

@@ -17,12 +17,12 @@ public class Compiler
     private readonly SemanticsPass _semanticsPass;
     private readonly Diagnostics _diagnostics;
 
-    public Compiler(SourceFile source)
+    public Compiler(SourceFile source, Diagnostics diagnostics)
     {
-        _diagnostics = Diagnostics.Console;
         _source = source;
-        _lexer = new Lexer(source,_diagnostics);
-        _parser = new Parser(_lexer,_diagnostics);
+        _diagnostics = diagnostics;
+        _lexer = new Lexer(source, _diagnostics);
+        _parser = new Parser(_lexer, _diagnostics);
         _semanticsPass = new SemanticsPass(_diagnostics);
     }
 
@@ -34,15 +34,20 @@ public class Compiler
         _source.Print();
     }
 
+    public void ParseAll()
+    {
+        _ast = _parser.ParseAll();
+    }
+
+    public void Analyze()
+    {
+        _semanticsPass.Visit((RootNode)_ast, ref NonRef.Empty);
+    }
+
     public void Run()
     {
-        var time = BeginTime();
-        _ast = _parser.ParseAll();
-        EndTime("Parse", time);
-
-        time = BeginTime();
-        _semanticsPass.Visit((RootNode)_ast, ref NonRef.Empty);
-        EndTime("SemanticsPass", time);
+        ParseAll();
+        Analyze();
     }
 
     long BeginTime() => DateTime.Now.Ticks;
