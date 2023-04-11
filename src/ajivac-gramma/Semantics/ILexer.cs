@@ -24,10 +24,10 @@ public class Lexer : ILexer
     public Token CurrentToken { get; set; }
 
     /// <inheritdoc />
-    public string LastIdentifier { get; set; }
+    public string? LastIdentifier { get; set; }
 
     /// <inheritdoc />
-    public string LastValue { get; set; }
+    public string? LastValue { get; set; }
 
     /// <inheritdoc />
     public int GetTokenPrecedence()
@@ -39,6 +39,8 @@ public class Lexer : ILexer
     /// <inheritdoc />
     public Token ReadNextToken()
     {
+        LastIdentifier = null;
+        LastValue = null;
         while (LanguageDefinition.IsWhiteSpace(ReadNextChar()))
         {
             _lastTokenPosition++;
@@ -61,7 +63,6 @@ public class Lexer : ILexer
 
             return NextTokenFromLast(TokenType.Identifier);
         }
-        LastIdentifier = null;
 
         if (LanguageDefinition.IsValidNumberBegin(_currentChar))
         {
@@ -83,7 +84,7 @@ public class Lexer : ILexer
             _buffer.Clear();
             return NextTokenFromLast(TokenType.Value);
         }
-        
+
         if (LanguageDefinition.IsCharBegin(_currentChar))
         {
             while (!LanguageDefinition.IsCharEnd(ReadNextChar()))
@@ -93,8 +94,6 @@ public class Lexer : ILexer
             _buffer.Clear();
             return NextTokenFromLast(TokenType.Value);
         }
-        LastValue = null;
-
 
         if (LanguageDefinition.IsCommentBegin(_currentChar))
         {
@@ -432,7 +431,8 @@ public class LanguageDefinition
 
     public static bool TryGetBuildInType(TokenType type, out TypeReference typeReference)
     {
-        typeReference = type switch {  //todo change to TypeKind
+        typeReference = type switch {
+            //todo change to TypeKind
             TokenType.I32 => TypeReference.I32,
             TokenType.I64 => TypeReference.I64,
             TokenType.U32 => TypeReference.U32,

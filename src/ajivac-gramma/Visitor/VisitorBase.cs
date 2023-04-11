@@ -71,8 +71,5 @@ public class AstVisitorBase<TResult, TArg>
     public virtual TResult Visit(ContinueStatement node, ref TArg arg) => VisitChildren(node, ref arg);
 
     /// <inheritdoc />
-    public TResult Default(ref TArg arg)
-    {
-        return default;
-    }
+    public virtual TResult Default(ref TArg arg) => default;
 }

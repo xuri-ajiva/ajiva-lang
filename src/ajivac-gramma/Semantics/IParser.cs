@@ -94,13 +94,16 @@ public class Parser : IParser
         var type = ParseBuildInType(out var buildInType);
         var identifier = ParseIdentifier();
         IExpression? expression = null;
+        var sourceSpan = type.Span.Append(identifier.Span);
         if (_lexer.CurrentToken.Type == TokenType.Assign)
         {
             _lexer.ReadNextToken(); //eat =
             expression = ParseExpression();
+            if (expression is not null)
+                sourceSpan = sourceSpan.Append(expression.Span);
         }
         return new LocalVariableDeclaration(
-            type.Span.Append(identifier.Span),
+            sourceSpan,
             identifier.Identifier,
             /*TypeReference.BuildIn*/(buildInType),
             expression
