@@ -5,24 +5,24 @@ namespace ajivac_lib;
 
 public class Diagnostics
 {
-    public Diagnostics(Action<string> writer, Sensitivity minSensitivity)
+    public Diagnostics(Action<string>? writer, Sensitivity minSensitivity)
     {
         Writer = writer;
         MinSensitivity = minSensitivity;
     }
 
     public int Count { get; private set; }
-    public Action<String> Writer { get; }
+    public Action<string>? Writer { get; }
     public Sensitivity MinSensitivity { get; }
 
-    public virtual void ReportError(SourceSpan location, string message, Sensitivity sensitivity)
+    public void ReportError(SourceSpan location, string message, Sensitivity sensitivity)
     {
-        if (sensitivity >= MinSensitivity)
-        {
-            Count++;
-            Writer?.Invoke($"[{sensitivity}] {location.FullLocation()}: {message}");
-        }
+        if (sensitivity < MinSensitivity) return;
+        Count++;
+        WriteReportError(location, message, sensitivity);
     }
+
+    protected virtual void WriteReportError(SourceSpan location, string message, Sensitivity sensitivity) => Writer?.Invoke($"[{sensitivity}] {location.FullLocation()}: {message}");
 
     public static Diagnostics Console { get; } = new Diagnostics(System.Console.WriteLine, Sensitivity.Info);
 
@@ -38,7 +38,7 @@ public class Diagnostics
 
     public void ReportUndefinedPreprocessor(string identifier, SourceSpan preprocessorSpan)
     {
-        ReportError(preprocessorSpan, $"Undefined preprocessor '{identifier}'", Sensitivity.Error);
+        ReportError(preprocessorSpan, $"Undefined preprocessor '{identifier}'", Sensitivity.Warning);
     }
 
     public void ReportVariableNotDefined(string nodeIdentifier, SourceSpan pos)
@@ -110,9 +110,16 @@ public class Diagnostics
     {
         ReportError(pos, $"Wrong argument type. Expected '{typeReference.Kind}', got '{argType.Kind}'", Sensitivity.Error);
     }
+
+    public void ReportAstNode(SourceSpan pos, IAstNode? res)
+    {
+        ReportError(pos, $"AST node '{res?.GetType()}'", Sensitivity.Debug);
+    }
 }
 public enum Sensitivity
 {
+    Diagnostic,
+    Debug,
     Info,
     Warning,
     Error,
