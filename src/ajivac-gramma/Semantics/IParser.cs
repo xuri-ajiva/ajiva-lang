@@ -183,6 +183,13 @@ public class Parser : IParser
 
     public IAstNode? ParsePrimary()
     {
+        var res = ParsePrimaryCore();
+        _diagnostics.ReportAstNode(_lexer.CurrentToken.Span, res);
+        return res;
+    }
+
+    private IAstNode? ParsePrimaryCore()
+    {
         switch (_lexer.CurrentToken.Type)
         {
             case TokenType.LBrace:
