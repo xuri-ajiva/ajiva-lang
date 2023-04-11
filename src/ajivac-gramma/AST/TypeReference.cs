@@ -18,4 +18,6 @@ public  record struct TypeReference(TypeKind Kind)
     public static readonly TypeReference Chr = new TypeReference(TypeKind.Chr);
     public static readonly TypeReference Void = new TypeReference(TypeKind.Void);
     public static readonly TypeReference Unknown = new TypeReference(TypeKind.Unknown);
+
+    public readonly override string ToString() => $"{nameof(Kind)}: {Kind}";
 }
