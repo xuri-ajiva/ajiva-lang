@@ -1,11 +1,19 @@
-﻿using ajivac_il;
+﻿using System.Diagnostics;
+using ajivac_il;
 using ajivac_lib;
 using ajivac_lib.AST;
+using ajivac_lib.ContextualAnalyzer.HelperStructs;
 using ajivac_lib.Semantics;
 using Spectre.Console;
 
 public static class Ext
 {
+    public static void Statistics(this SourceFile src)
+    {
+        AnsiConsole.MarkupLine($"[green]Statistics[/] for {src.Path}");
+        AnsiConsole.MarkupLine($"[gray]Bytes[/]: {src.Text.Length}");
+    }
+
     public static SourceFile SourceFile(string path, out string name)
     {
         var source = new SourceFile(File.ReadAllText(path), path);
@@ -24,7 +32,9 @@ public static class Ext
         AnsiConsole.MarkupLine($"[green]Running[/] {name}");
         try
         {
+            var start = Start();
             ilGenerator.Run();
+            StopAndPrint(start, "Running");
         }
         catch (Exception e)
         {
@@ -44,11 +54,13 @@ public static class Ext
                 {
                     AnsiConsole.MarkupLine($"[green]Compiling {name}[/]");
                     ctx.Status("Parsing...");
+                    var start = Start();
                     compiler.ParseAll();
-                    AnsiConsole.MarkupLine("[green]Parsing Done[/]");
+                    StopAndPrint(start, "Parsing");
                     ctx.Status("Semantic Analysis...");
+                    start = Start();
                     compiler.Analyze();
-                    AnsiConsole.MarkupLine("[green]Semantic Analysis Done[/]");
+                    StopAndPrint(start, "Semantic Analysis");
                 });
     }
 
@@ -60,12 +72,22 @@ public static class Ext
                 {
                     AnsiConsole.MarkupLine($"[green]Generating {name}[/]");
                     ctx.Status("Generating...");
+                    var start = Start();
                     compiler.Ast.Accept(generator, ref IlFrame.Empty);
-                    AnsiConsole.MarkupLine("[green]Generating Done[/]");
+                    StopAndPrint(start, "Generating");
                     ctx.Status("Finishing...");
+                    start = Start();
                     generator.Finish();
-                    AnsiConsole.MarkupLine("[green]Finishing Done[/]");
+                    StopAndPrint(start, "Finishing");
                 });
+    }
+
+    public static long Start() => Stopwatch.GetTimestamp();
+
+    public static void StopAndPrint(long start, string name)
+    {
+        var ts = Stopwatch.GetElapsedTime(start);
+        AnsiConsole.MarkupLine($"[gray]{name}[/] took {ts.TotalMilliseconds}ms");
     }
 
     public static void SaveWithOutput(this ILCodeGenerator ilGenerator, string path, string name)
@@ -76,8 +98,9 @@ public static class Ext
                 {
                     var save = Path.GetFullPath(path);
                     AnsiConsole.MarkupLine($"[green]Saving {name}[/]");
+                    var start = Start();
                     ilGenerator.Save(save);
-                    AnsiConsole.MarkupLine($"[green]Saved[/] {save}");
+                    StopAndPrint(start, "Saving");
                     //write .runtimeconfig.json
                     var runtimeConfigPath = Path.ChangeExtension(save, ".runtimeconfig.json");
                     ctx.Status("[green]Writing runtimeconfig.json[/]");
@@ -92,23 +115,51 @@ public static class Ext
                                           }
                                         }
                                         """;
+                    start = Start();
                     File.WriteAllText(runtimeConfigPath, runtimeConfig);
-                    AnsiConsole.MarkupLine($"[green]Written[/] {runtimeConfigPath}");
+                    StopAndPrint(start, "Writing runtimeconfig.json");
                 });
     }
 
     public static void PrintTree(this IAstNode compilerAst)
     {
         AnsiConsole.MarkupLine("[green]AST[/]");
-        var root = compilerAst.ToTree().First();
-        AnsiConsole.Write(root);
+        TreeBuildVisitor visitor = new();
+        var root = compilerAst.Accept(visitor, ref NonRef.Empty);
+        //var root = compilerAst.ToTree().First();
+        AnsiConsole.Write(root.ToTree());
     }
 
-    public static IEnumerable<Tree> ToTree(this IAstNode node)
+    public static Tree ToTree(this TreeRef node)
     {
-        var tree = new Tree(node.GetType().ToString());
-        foreach (var child in node.Children)
+        var tree = new Tree("[blue]" + node.Text + "[/]"
+                            + (node.Type is not null ? $" [yellow]{node.Type}[/]" : ""));
+        if (node.Name is not null)
+            tree.AddNode("[green]" + node.Name + "[/]");
+        foreach (var child in node.Childiren)
             tree.AddNodes(child.ToTree());
-        yield return tree;
+        return tree;
+    }
+}
+
+public struct TreeRef
+{
+    public List<TreeRef> Childiren;
+    public string? Name;
+    public string? Type;
+    public string Text;
+
+    public TreeRef(string text)
+    {
+        Childiren = new();
+        Text = text;
+    }
+
+    public TreeRef(string text, TypeReference type, string? name = null)
+    {
+        Childiren = new();
+        Name = name;
+        Type = type.ToString();
+        Text = text;
     }
 }
