@@ -99,8 +99,9 @@ fn i32 printn(i32 n) {
 ";
 var interpreter = new Interpreter(s => Debug.WriteLine(s));
 ILCodeGenerator iLGenerator = new ILCodeGenerator("result.dll", interpreter);
-var compiler = new Compiler(new SourceFile(fisBuzz, "File.aj"), Diagnostics.Console);
-compiler.PrintSource();
+var sourceFile = new SourceFile(fisBuzz, "File.aj");
+sourceFile.Print(Console.Out);
+var compiler = new Compiler(sourceFile, Diagnostics.Console);
 compiler.Run();
 //compiler.PrintTree();
 iLGenerator.Visit((RootNode)compiler.Ast);

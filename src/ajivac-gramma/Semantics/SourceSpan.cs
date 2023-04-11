@@ -15,9 +15,9 @@ public struct SourceSpan
     {
         //calculate line and column
         var line = 1;
-        var iter = Source.AsSpan(0, (int)Position)
+        var iter = Source.AsSpan(0, Position >=Source.Length ? Source.Length : (int)Position )
             .EnumerateLines();
-        
+
         while (iter.MoveNext())
         {
             line++;
@@ -28,7 +28,14 @@ public struct SourceSpan
 
     public string GetValue()
     {
-        var res = Source.AsSpan().Slice((int)Position, (int)Length);
+        //check bounds
+        if(Position >= Source.Length)
+            return string.Empty;
+        var res =
+            Position + Length <= Source.Length ? 
+            Source.AsSpan().Slice((int)Position, (int)Length) :
+            Source.AsSpan()[(int)Position..];
+
         //replace \n with \\n
         Span<char> tmp = stackalloc char[res.Length * 2];
         var i = 0;

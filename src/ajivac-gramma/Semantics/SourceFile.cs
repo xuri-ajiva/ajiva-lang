@@ -2,9 +2,9 @@
 
 public record SourceFile(string Text, string Path)
 {
-    public void Print()
+    public void Print(TextWriter writer)
     {
-        Console.WriteLine(Text.Replace("\r\n", "\r\n>  "));
+        writer.WriteLine(Text.Replace("\r\n", "\r\n>  "));
     }
     
     public SourceFile(FileInfo file)
