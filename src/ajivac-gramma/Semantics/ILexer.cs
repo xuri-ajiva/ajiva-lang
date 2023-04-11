@@ -241,12 +241,13 @@ public class Lexer : ILexer
 
     private Token NextTokenFromLast(TokenType type)
     {
-        CurrentToken = new Token(type, new SourceSpan {
-            Position = _lastTokenPosition,
-            Length = _currentPosition - _lastTokenPosition,
-            Source = _file.Text,
-            File = _file.Path  
-        });
+        CurrentToken = new Token(EOF ? TokenType.EOF : type, //pass EOF as the type if we are at the end of the file
+            new SourceSpan {
+                Position = _lastTokenPosition,
+                Length = _currentPosition - _lastTokenPosition,
+                Source = _file.Text,
+                File = _file.Path
+            });
         _lastTokenPosition = _currentPosition;
         return CurrentToken;
     }
