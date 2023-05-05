@@ -447,7 +447,7 @@ public class Parser : IParser
     public IExpression? ParseExpression()
     {
         var lhs = ParsePrimary();
-        return lhs is null ? null : ParseBinOpRHS(0, lhs);
+        return lhs is null ? null : ParseBinOpRHS(20, lhs);
     }
 
     private IExpression? ParseBinOpRHS(int exprPrecedence, IAstNode lhs)
