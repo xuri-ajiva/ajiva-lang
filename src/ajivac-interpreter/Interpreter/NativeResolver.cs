@@ -39,7 +39,7 @@ public class NativeResolver
 
         if (typeof(NativeFunctions).GetMethod(name, BindingFlags.Static | BindingFlags.Default | BindingFlags.Public, parameterTypes) is not { } mi)
             throw new Exception($"Native method {name} not found");
-        if (returnType != null && mi.ReturnType != ResolveNative(returnType))
+        if (returnType is not null && returnType.Value != TypeReference.Void  && mi.ReturnType != ResolveNative(returnType))
             throw new Exception($"Native Interpreter method {name} has wrong return type: {mi.ReturnType} != {ResolveNative(returnType)}");
 
         return mi;
