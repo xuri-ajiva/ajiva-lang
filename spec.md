@@ -1,4 +1,5 @@
-# The Ajiva-Lang Specification
+# The Ajiva-Lang Specification (outdated)
+TODO Update this spec, to reflect the current state of the language
 
 basic description
 
