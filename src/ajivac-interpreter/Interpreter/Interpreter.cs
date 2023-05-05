@@ -227,7 +227,7 @@ public class Interpreter
         throw new NotImplementedException(node.ToString());
     }
 
-    private object? CallFunction(string calleeName, List<IExpression> arguments)
+    private object? CallFunction(string calleeName, IEnumerable<IExpression> arguments)
     {
         var args = arguments.Select(EvaluateExpression).ToArray();
         var proto = _functionResolver.CallBlank(calleeName, args);
