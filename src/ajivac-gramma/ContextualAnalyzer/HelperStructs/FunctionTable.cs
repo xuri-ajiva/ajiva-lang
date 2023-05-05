@@ -59,7 +59,7 @@ public class FunctionTable
 
             function = new FunctionDefinition(SourceSpan.Empty,
                 new Prototype(SourceSpan.Empty, resolve.Name, true, args, NativeResolver.NativeResolve(resolve.ReturnType), true),
-                new RootNode(SourceSpan.Empty, ArraySegment<IAstNode>.Empty));
+                new CompoundStatement(SourceSpan.Empty, ArraySegment<IAstNode>.Empty));
             natives.Add(name, new List<FunctionDefinition> {
                 function
             });

@@ -51,7 +51,7 @@ public class Interpreter
                     return Evaluate(attributeEaSt.Operand);
                 }
                 throw new("Invalid Entry Point");
-            case RootNode rootNode:
+            case CompoundStatement rootNode:
                 foreach (var rootChild in rootNode.Children)
                 {
                     var ret = Evaluate(rootChild);

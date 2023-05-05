@@ -348,24 +348,21 @@ public class Parser : IParser
         var ifToken = GuardAndEat(TokenType.If);
         var condition = ParseParenthesis();
         var body = ParseBlock();
-        if (_lexer.CurrentToken.Type == TokenType.Else)
-        {
-            var elseToken = GuardAndEat(TokenType.Else);
-            var elseBody = ParseBlock();
+        if (_lexer.CurrentToken.Type != TokenType.Else)
             return new IfExpression(
-                ifToken.Span.Append(elseToken.Span),
+                ifToken.Span.Append(condition.Span),
                 condition,
                 body,
-                elseBody,
                 null
             );
-        }
+        
+        var elseToken = GuardAndEat(TokenType.Else);
+        var elseBody = ParseBlock();
         return new IfExpression(
-            ifToken.Span.Append(condition.Span),
+            ifToken.Span.Append(elseToken.Span),
             condition,
             body,
-            null,
-            null
+            elseBody
         );
     }
 
@@ -441,7 +438,7 @@ public class Parser : IParser
             var close = GuardAndEat(TokenType.RBrace);
             pos = pos.Append(close.Span);
         }
-        return new RootNode(pos, children);
+        return new CompoundStatement(pos, children);
     }
 
     public IExpression? ParseExpression()
@@ -612,7 +609,7 @@ public class Parser : IParser
         {
             children.Add(ParsePrimary());
         }
-        return new RootNode(_lexer.CurrentToken.Span with {
+        return new CompoundStatement(_lexer.CurrentToken.Span with {
                 Length = _lexer.CurrentToken.Span.Position,
                 Position = 0,
             },

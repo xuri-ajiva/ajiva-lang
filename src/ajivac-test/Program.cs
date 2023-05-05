@@ -104,7 +104,7 @@ sourceFile.Print(Console.Out);
 var compiler = new Compiler(sourceFile, Diagnostics.Console);
 compiler.Run();
 //compiler.PrintTree();
-iLGenerator.Visit((RootNode)compiler.Ast);
+iLGenerator.Visit((CompoundStatement)compiler.Ast);
 iLGenerator.Finish();
 iLGenerator.Run();
 iLGenerator.Save("result.dll");

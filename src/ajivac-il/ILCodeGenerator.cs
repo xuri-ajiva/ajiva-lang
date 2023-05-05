@@ -79,7 +79,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         _result = _type.CreateType();
     }
 
-    public void Visit(RootNode node) => VisitChildren(node, ref IlFrame.Empty);
+    public void Visit(CompoundStatement node) => VisitChildren(node, ref IlFrame.Empty);
 
     public override IlFrame Visit(FunctionDefinition node, ref IlFrame arg)
     {

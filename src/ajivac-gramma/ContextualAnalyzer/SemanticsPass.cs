@@ -17,7 +17,7 @@ public class SemanticsPass : AstVisitorBase<NonRef, NonRef>
         _typePass = new TypePass(diagnostics);
     }
 
-    public override NonRef Visit(RootNode node, ref NonRef arg)
+    public override NonRef Visit(CompoundStatement node, ref NonRef arg)
     {
         _refPass.Visit(node, ref arg);
         _typePass.Visit(node, ref arg);

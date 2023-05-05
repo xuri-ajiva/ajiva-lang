@@ -72,7 +72,7 @@ public class RefPass : AstAllSubVisitorBase<NonRef, NonRef>
         return base.Visit(node, ref arg);
     }
 
-    public override NonRef Visit(RootNode node, ref NonRef arg)
+    public override NonRef Visit(CompoundStatement node, ref NonRef arg)
     {
         idTable.OpenScope();
         base.Visit(node, ref arg);

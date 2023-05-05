@@ -17,7 +17,7 @@ public class AstVisitorBase<TResult, TArg>
     }
 
     /// <inheritdoc />
-    public virtual TResult Visit(RootNode node, ref TArg arg) => VisitChildren(node, ref arg);
+    public virtual TResult Visit(CompoundStatement node, ref TArg arg) => VisitChildren(node, ref arg);
 
     /// <inheritdoc />
     public virtual TResult Visit(LiteralExpression node, ref TArg arg) => VisitChildren(node, ref arg);

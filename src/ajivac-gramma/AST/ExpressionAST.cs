@@ -35,13 +35,13 @@ public abstract record BaseNode(SourceSpan Span) : IAstNode
     /// <inheritdoc />
     public abstract IEnumerable<IAstNode> Children { get; }
 }
-public record RootNode(SourceSpan Span, IEnumerable<IAstNode> Childs) : BaseNode(Span)
+public record CompoundStatement(SourceSpan Span, IEnumerable<IAstNode> Statements) : BaseNode(Span)
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
 
     /// <inheritdoc />
-    public override IEnumerable<IAstNode> Children => Childs;
+    public override IEnumerable<IAstNode> Children => Statements;
 
     protected override bool PrintMembers(StringBuilder builder)
     {
@@ -164,7 +164,7 @@ public record Prototype(SourceSpan Span, string Name, bool IsExtern, IReadOnlyLi
 
     public TypeReference TypeReference => ReturnType;
 }
-public record FunctionCallExpression(SourceSpan Span, string CalleeName, List<IExpression> Arguments) : BaseNode(Span), ITypedExpression, IExpression
+public record FunctionCallExpression(SourceSpan Span, string CalleeName, IReadOnlyList<IExpression> Arguments) : BaseNode(Span), ITypedExpression, IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);
@@ -242,12 +242,7 @@ public record AttributeEaSt(SourceSpan Span, string Name, IAstNode? Operand, IRe
     }
 }
 public record IfExpression(
-    SourceSpan Span, IExpression Condition, IAstNode ThenExpression, IAstNode? ElseExpression,
-    // compiler generated result variable supports building conditional
-    // expressions without the need for SSA form by using mutable variables
-    // The result is assigned a value from both sides of the branch. In
-    // pure SSA form this isn't needed as a PHI node would be used instead.
-    LocalVariableDeclaration? ResultVar) : BaseNode(Span), IExpression
+    SourceSpan Span, IExpression Condition, IAstNode ThenExpression, IAstNode? ElseExpression) : BaseNode(Span), IExpression
 {
     /// <inheritdoc />
     public override TResult Accept<TResult, TArg>(IAstVisitor<TResult, TArg> visitor, ref TArg arg) where TResult : struct where TArg : struct => visitor.Visit(this, ref arg);

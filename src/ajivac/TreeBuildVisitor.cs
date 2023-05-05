@@ -4,7 +4,7 @@ using ajivac_lib.Visitor;
 
 public class TreeBuildVisitor : AstVisitorBase<TreeRef, NonRef>
 {
-    public override TreeRef Visit(RootNode node, ref NonRef arg)
+    public override TreeRef Visit(CompoundStatement node, ref NonRef arg)
     {
         return VisitChildren(node, ref arg);
     }
