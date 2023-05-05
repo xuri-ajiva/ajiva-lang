@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 using ajivac_lib;
@@ -12,17 +13,23 @@ namespace ajivac_il;
 public struct IlFrame
 {
     public static IlFrame Empty;
-    public ILGenerator Il;
+    public ILGenerator Il => Method.GetILGenerator();
     public MethodBuilder Method;
     public Dictionary<LocalVariableDeclaration, LocalBuilder> LocalVariableDeclarationToDynamicLocal = new();
 
     public Label BreakLabel;
     public Label ContinueLabel;
 
+    public int Allocations;
+
     public IlFrame()
     {
-        Il = null;
-        Method = null;
+        throw new UnreachableException("This constructor should never be called");
+    }
+
+    public IlFrame(MethodBuilder method)
+    {
+        Method = method;
         BreakLabel = default;
         ContinueLabel = default;
     }
@@ -32,7 +39,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
     private readonly Interpreter _interpreter;
     private readonly AssemblyBuilder _assembly;
     private readonly TypeBuilder _type;
-    private readonly MethodBuilder _mainMethod;
+    private IlFrame _mainMethodFrame;
 
     private readonly Dictionary<Prototype, MethodInfo> _functionDefinitionToDynamicMethod = new();
     private Type? _result;
@@ -42,7 +49,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         _interpreter = interpreter;
         _assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(assemblyName), AssemblyBuilderAccess.RunAndCollect);
         _type = _assembly.DefineDynamicModule("MainModule").DefineType("Program");
-        _mainMethod = _type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static);
+        _mainMethodFrame = new IlFrame(_type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.Static));
     }
 
     public void Save(string resultDll)
@@ -63,30 +70,31 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
     public void Finish()
     {
         if (_result is not null) return;
-        _mainMethod.GetILGenerator().Emit(OpCodes.Ret);
+        while (_mainMethodFrame.Allocations > 0)
+        {
+            _mainMethodFrame.Il.Emit(OpCodes.Pop);
+            _mainMethodFrame.Allocations--;
+        }
+        _mainMethodFrame.Il.Emit(OpCodes.Ret);
         _result = _type.CreateType();
     }
-
-    private object? Eval(IExpression nodeInitializer) => _interpreter.EvaluateExpression(nodeInitializer);
 
     public void Visit(RootNode node) => VisitChildren(node, ref IlFrame.Empty);
 
     public override IlFrame Visit(FunctionDefinition node, ref IlFrame arg)
     {
-        var frame = new IlFrame();
-        frame.Method = _type.DefineMethod(node.Signature.Name, MethodAttributes.Public | MethodAttributes.Static, ConversionHelpers.BuildInTypeToType(node.Signature.ReturnType),
+        var frame = new IlFrame(_type.DefineMethod(node.Signature.Name, MethodAttributes.Public | MethodAttributes.Static, ConversionHelpers.BuildInTypeToType(node.Signature.ReturnType),
             node.Signature.Parameters.Select(p => ConversionHelpers.BuildInTypeToType(p.TypeReference)).ToArray()
-        );
-        frame.Il = frame.Method.GetILGenerator();
+        ));
         _functionDefinitionToDynamicMethod.Add(node.Signature, frame.Method);
         VisitChildren(node, ref frame);
-        frame.Il.Emit(OpCodes.Ret);
+        frame.Il.Emit(OpCodes.Ret); //catch missing return statement
         return frame;
     }
 
     public override IlFrame Visit(ParameterDeclaration node, ref IlFrame arg)
     {
-        var parameter = arg.Method.DefineParameter(node.Index,
+        var parameter = arg.Method.DefineParameter(node.Index + 1,
             node.Initializer is not null ? ParameterAttributes.HasDefault : ParameterAttributes.None,
             node.Name);
         if (node.Initializer is not null)
@@ -100,7 +108,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         switch (node.TypeReference.Kind)
         {
             case TypeKind.Unknown:
-                break;
+                return arg; //
             case TypeKind.Bit:
                 il.Emit(node.Value == "true" ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 break;
@@ -129,12 +137,13 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
                 il.Emit(OpCodes.Ldc_I4, node.Value[0]);
                 break;
             case TypeKind.Void:
-                break;
+                return arg;
             case TypeKind.UserDefinedBegin:
-                break;
+                return arg;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        arg.Allocations++;
         return arg;
     }
 
@@ -145,6 +154,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
             il.Emit(OpCodes.Ldarg_S, para.Index);
         else
             il.Emit(OpCodes.Ldloc, arg.LocalVariableDeclarationToDynamicLocal[node.Definition!]);
+        arg.Allocations++;
         return arg;
     }
 
@@ -193,7 +203,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
             il.Emit(OpCodes.Ldc_I4_0);
             il.Emit(OpCodes.Ceq);
         }
-
+        arg.Allocations++;
         return arg;
     }
 
@@ -206,23 +216,28 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
             case UnaryOperator.Not:
                 il.Emit(OpCodes.Ldc_I4_0);
                 il.Emit(OpCodes.Ceq);
+                arg.Allocations++;
                 break;
             case UnaryOperator.Negate:
                 il.Emit(OpCodes.Not);
+                arg.Allocations++;
                 break;
             case UnaryOperator.Positive:
                 il.Emit(OpCodes.Nop);
                 break;
             case UnaryOperator.Negative:
                 il.Emit(OpCodes.Neg);
+                arg.Allocations++;
                 break;
             case UnaryOperator.Increment:
                 il.Emit(OpCodes.Ldc_I4_1);
                 il.Emit(OpCodes.Add);
+                arg.Allocations++;
                 break;
             case UnaryOperator.Decrement:
                 il.Emit(OpCodes.Ldc_I4_1);
                 il.Emit(OpCodes.Sub);
+                arg.Allocations++;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -232,28 +247,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
 
     public override IlFrame Visit(FunctionCallExpression node, ref IlFrame arg)
     {
-        var il = arg.Il;
-        foreach (var argument in node.Arguments)
-        {
-            argument.Accept(this, ref arg);
-        }
-        arg.Il.EmitCall(OpCodes.Call, FindCallTarget(node), null);
-        return arg;
-    }
-
-    private MethodInfo FindCallTarget(FunctionCallExpression node)
-    {
-        if (node.Definition is { Signature.IsExtern: true } externDefinition)
-        {
-            return NativeResolver.SResolve(
-                node.CalleeName,
-                externDefinition.Signature.Parameters.Select(x => ConversionHelpers.BuildInTypeToType(x.TypeReference)).ToArray(),
-                externDefinition.Signature.ReturnType
-            );
-        }
-        else if (node.Definition is { Signature: { } signature })
-            return _functionDefinitionToDynamicMethod[signature];
-        throw new Exception();
+        return CallFunction(ref arg, node.Arguments, FindCallTarget(node));
     }
 
     public override IlFrame Visit(Prototype node, ref IlFrame arg)
@@ -280,11 +274,16 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         var elseLabel = il.DefineLabel();
         var endLabel = il.DefineLabel();
         il.Emit(OpCodes.Brfalse, elseLabel);
+        il.BeginScope();
         node.ThenExpression.Accept(this, ref arg);
+        il.EndScope();
         il.Emit(OpCodes.Br, endLabel);
         il.MarkLabel(elseLabel);
+        il.BeginScope();
         node.ElseExpression?.Accept(this, ref arg);
+        il.EndScope();
         il.MarkLabel(endLabel);
+        il.Emit(OpCodes.Nop); //if tair is no instruction at the label the program is invalid 
         return arg;
     }
 
@@ -293,6 +292,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         var il = arg.Il;
         node.AssignmentValue?.Accept(this, ref arg);
         il.Emit(OpCodes.Stloc, arg.LocalVariableDeclarationToDynamicLocal[node.Definition!]);
+        arg.Allocations--;
         return arg;
     }
 
@@ -307,6 +307,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
     {
         var il = arg.Il;
         node.Expression?.Accept(this, ref arg);
+        //todo cleanup stack?
         il.Emit(OpCodes.Ret);
         return arg;
     }
@@ -333,6 +334,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         node.Body.Accept(this, ref ilFrame);
         il.Emit(OpCodes.Br, continueLabel);
         il.MarkLabel(breakLabel);
+        il.Emit(OpCodes.Nop);
         return arg;
     }
 
@@ -353,6 +355,7 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
         node.Increment?.Accept(this, ref arg);
         il.Emit(OpCodes.Br, continueLabel);
         il.MarkLabel(breakLabel);
+        il.Emit(OpCodes.Nop);
         return arg;
     }
 
@@ -374,19 +377,39 @@ public class ILCodeGenerator : AstVisitorBase<IlFrame, IlFrame>
             var res = node.Operand.Accept(this, ref arg);
             if (node.Name == "entry")
             {
-                var main = new IlFrame();
-                main.Method = _mainMethod;
-                main.Il = _mainMethod.GetILGenerator();
-                //laod all args
-                if (node.Arguments is { } args)
-                    foreach (var nodeArgument in args)
-                    {
-                        nodeArgument.Accept(this, ref main);
-                    }
-                main.Il.Emit(OpCodes.Call, res.Method);
+                CallFunction(ref _mainMethodFrame, node.Arguments, res.Method);
             }
         }
 
         return arg;
     }
+
+#region helpers
+
+    private IlFrame CallFunction(ref IlFrame arg, IReadOnlyList<IExpression>? args, MethodInfo target)
+    {
+        if (args is not null)
+        {
+            foreach (var argument in args)
+                argument.Accept(this, ref arg);
+            arg.Allocations -= args.Count;
+        }
+        arg.Il.EmitCall(OpCodes.Call, target, null);
+        if (target.ReturnType != typeof(void))
+            arg.Allocations++;
+        return arg;
+    }
+
+    private object? Eval(IExpression nodeInitializer) => _interpreter.EvaluateExpression(nodeInitializer);
+
+    private MethodInfo FindCallTarget(FunctionCallExpression node)
+    {
+        return node.Definition switch {
+            { Signature.IsExtern: true } externDefinition => NativeResolver.SResolve(node.CalleeName, externDefinition.Signature.Parameters.Select(x => ConversionHelpers.BuildInTypeToType(x.TypeReference)).ToArray(), externDefinition.Signature.ReturnType),
+            { Signature: { } signature } => _functionDefinitionToDynamicMethod[signature],
+            _ => throw new Exception()
+        };
+    }
+
+#endregion
 }
